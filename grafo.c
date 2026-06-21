@@ -2,7 +2,8 @@
 #include "grafo.h"
 #include <stdlib.h>
 
-Grafo_lista *inicializarGrafoLista(int numVertices){
+Grafo_lista *iniciarGrafoLista(int numVertices){
+
     Grafo_lista *grafo = malloc(sizeof(Grafo_lista));
     
     if(grafo == NULL) {
@@ -23,19 +24,17 @@ Grafo_lista *inicializarGrafoLista(int numVertices){
     
     return grafo;
 }
-
 Vertice* criarVertice_lista(int idt){
 	Vertice *novoVertice = malloc(sizeof(Vertice));
 	novoVertice->id = idt;
 	novoVertice->prox = NULL;
 	return novoVertice;
 }
-void inserirInicio(Vertice **listaVertice, Vertice *vertice,int index){
-    Vertice *aux = listaVertice[index];
-    listaVertice[index] = vertice;
-    vertice->prox = aux; 
+void inserirInicio(Grafo_lista *grafo, Vertice *vertice,int index){
+   vertice->prox = grafo->listaAdj[index];
+   grafo->listaAdj[index] = vertice;
 }
-void insere_lista(Grafo_lista *grafo, int origem, int destino){
+void insercao_aresta_lista(Grafo_lista *grafo, int origem, int destino){
 	Vertice *novoVertice = criarVertice_lista(destino);
     Vertice *simetricoVertice = criarVertice_lista(origem);
     
@@ -45,39 +44,62 @@ void insere_lista(Grafo_lista *grafo, int origem, int destino){
         free(simetricoVertice);
         return;
     }
-    inserirInicio(grafo->listaAdj, novoVertice, origem);
-    inserirInicio(grafo->listaAdj, simetricoVertice, destino);
+    inserirInicio(grafo, novoVertice, origem);
+    inserirInicio(grafo, simetricoVertice, destino);
     grafo->numArestas++;
 }
-
-
-int **criarMatriz(int tamanho) {
-    int **matriz;
-    int i;
-
-    // Aloca o vetor de ponteiros
-    matriz = (int **)calloc(tamanho, sizeof(int *));
-    if (matriz == NULL)
-        return NULL;
-
-    // Aloca cada linha já preenchida com 0
-    for (i = 0; i < tamanho; i++) {
-        matriz[i] = (int *)calloc(tamanho, sizeof(int));
-
-        if (matriz[i] == NULL) {
-            while (--i >= 0)
-                free(matriz[i]);
-
-            free(matriz);
-            return NULL;
+void liberar_lista(Grafo_lista *grafo){
+    for(int i = 0 ; i < grafo->numVertices ; i++){
+        Vertice *atual = grafo->listaAdj[i];
+        while(atual != NULL){
+            Vertice *prox = atual->prox;
+            free(atual);
+            atual = prox;
         }
     }
-
-    return matriz;
+    free(grafo->listaAdj);
+    free(grafo);
 }
-void inserir_matriz(int **matriz, int origem, int destino){
-    matriz[origem][destino] = 1;
-    matriz[destino][origem] = 1;
+
+
+Grafo_Matriz *iniciarGrafoMatriz(int numVertices){
+    Grafo_Matriz *grafo = malloc(sizeof(Grafo_Matriz));
+    if(grafo == NULL) return NULL;
+
+    grafo->matriz = calloc(numVertices, sizeof(int *));
+
+    if (grafo->matriz == NULL){
+        free(grafo);
+        return NULL;
+    }
+        
+    int i;
+
+    for(i=0 ; i < numVertices ; i++){
+        grafo->matriz[i] = calloc(numVertices,sizeof(int));
+        
+        if(grafo->matriz[i] == NULL){
+            liberar_matriz(grafo,i);
+            return NULL;
+        }    
+    }
+    grafo->numArestas = 0;
+    grafo->numVertices = numVertices;
+    return grafo;
+}
+void liberar_matriz(Grafo_Matriz *grafo, int tam){
+    for(int i = 0; i < tam; i++){
+        free(grafo->matriz[i]);
+    }
+    free(grafo->matriz);
+    free(grafo);
+}
+void insercao_aresta_matriz(Grafo_Matriz *grafo, int origem, int destino){
+    if(grafo->matriz[origem][destino] == 0){
+        grafo->matriz[origem][destino] = 1;
+        grafo->matriz[destino][origem] = 1;
+        grafo->numArestas++;
+    }
 }
 
 
@@ -92,7 +114,7 @@ int numero_vetores(char nome_arq[]){
         return tam;
     }
 }
-void ler_inserir(char nome_arq[], Grafo_lista *grafo, int **matriz){
+void ler_inserir(char nome_arq[], Grafo_lista *grafoAdj, Grafo_Matriz *grafoMat){
     FILE *file = fopen(nome_arq,"r");
     if(file == NULL){
         printf("ERRO, não foi possivel abrir o arquivo: %s",nome_arq);
@@ -101,10 +123,89 @@ void ler_inserir(char nome_arq[], Grafo_lista *grafo, int **matriz){
         int origem, destino,lixo;
         fscanf(file,"%d",&lixo);
         while(fscanf(file,"%d %d",&origem,&destino) == 2){
-            inserir_matriz(matriz,origem-1,destino-1);
-            insere_lista(grafo, origem-1, destino-1);
+            insercao_aresta_matriz(grafoMat,origem-1,destino-1);
+            insercao_aresta_lista(grafoAdj, origem-1, destino-1);
         }
         fclose(file);
     }
 }
+
+
+int comp(const void * a, const void *b){
+    return (*(int *)a - *(int *)b);
+}
+double mediana(int vetor[],int tam){
+    qsort(vetor,tam,sizeof(int),comp);
+     if (tam % 2 == 1) {
+       return vetor[tam / 2];
+    } else {
+        return (double)((vetor[tam / 2 - 1] +  vetor[tam / 2])) / 2.0;
+    }
+}
+
+
+int grau_vertice_lista(Grafo_lista *grafo, int n){
+    Vertice *aux = grafo->listaAdj[n];
+    int grau = 0;
+    while(aux != NULL){
+        aux = aux->prox;
+        grau++;
+    }
+    return grau;
+}
+Estatisticas estatisticas_lista(Grafo_lista *grafo){
+    Estatisticas est;
+
+    int grau;
+    int somaGrau = 0;
+    int TAM = grafo->numVertices;
+
+    int vertices_grau[TAM];
+    for(int i = 0 ; i < TAM ; i++){
+        grau = grau_vertice_lista(grafo,i);
+        vertices_grau[i] = grau;
+        somaGrau += grau;
+    }
+
+    est.grauMediana = mediana(vertices_grau,TAM);
+    est.grauMinimo = vertices_grau[0];
+    est.grauMedio = (double) somaGrau / (double) TAM;
+    est.grauMaximo = vertices_grau[TAM-1];
+    est.numVertices = grafo->numVertices;
+    est.numArestas = grafo->numArestas;
+    return est;
+}
+
+
+int grau_vertice_matriz(Grafo_Matriz *grafo, int vertice){
+    int grau = 0;
+    for(int j = 0; j < grafo->numVertices ; j++){
+        if(grafo->matriz[vertice][j] == 1){
+            grau++;
+        } 
+    }
+    return grau;
+}
+Estatisticas estatisticas_matriz(Grafo_Matriz *grafo){
+    Estatisticas est;
+
+    int grau;
+    int somaGrau = 0;
+    int tam = grafo->numVertices;
+    
+    int vertices_grau[tam];
+    for(int i = 0; i < tam ; i++){
+        grau = grau_vertice_matriz(grafo,i);
+        vertices_grau[i] = grau;
+        somaGrau += grau;
+    }
+    est.grauMediana = mediana(vertices_grau,tam);
+    est.grauMinimo = vertices_grau[0];
+    est.grauMedio = (double) somaGrau / (double) tam;
+    est.grauMaximo = vertices_grau[tam-1];
+    est.numVertices = grafo->numVertices;
+    est.numArestas = grafo->numArestas;
+    return est;
+}
+
 
