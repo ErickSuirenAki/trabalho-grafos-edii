@@ -1,5 +1,4 @@
-#include <stdlib.h>
-#include "grafo.h"
+
 #include <time.h>
 
 //item 4 (busca em porfundidade) - ERICk >>>>> falta salvar as informações num arquivo
