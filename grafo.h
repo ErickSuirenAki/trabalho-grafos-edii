@@ -1,10 +1,17 @@
 #ifndef GRAFO_H
 #define GRAFO_H
+#include <stdbool.h>
 
 typedef struct Vertice {
     int id;
     struct Vertice *prox;
 } Vertice;
+typedef struct{
+    int *dados;
+    int inicio;
+    int fim;
+    int tamanho;
+}Fila;
 typedef struct {
     int numVertices;
     int numArestas;
@@ -23,6 +30,18 @@ typedef struct{
     double grauMedio;
     double grauMediana;
 }Estatisticas;
+typedef struct{
+    int *idx;
+    int tamanho;
+}ListaVertice;
+
+
+//implementacao da fila
+Fila *criarFila(int tamanho);
+void enfilerar(Fila *f,int vertice);
+int desenfilerar(Fila *f);
+bool filaVazia(Fila *f);
+ListaVertice BFS(Grafo_lista *grafo,int inicio);
 
 
 // funções
@@ -33,6 +52,7 @@ Vertice* criarVertice_lista(int idt);
 void inserirInicio(Grafo_lista *grafo, Vertice *vertice,int index);
 void insercao_aresta_lista(Grafo_lista *grafo, int origem, int destino);
 void liberar_lista(Grafo_lista *grafo);
+void imprimir_grafo_lista(Grafo_lista *grafo);
 
 //matriz adjascente
 Grafo_Matriz *iniciarGrafoMatriz(int numVertices);

@@ -1,6 +1,65 @@
 #include <stdio.h>
 #include "grafo.h"
 #include <stdlib.h>
+#include <stdbool.h>
+
+Fila *criarFila(int tamanho){
+    Fila *f = malloc(sizeof(Fila));
+    f->dados = malloc(sizeof(int) * tamanho);
+    f->inicio = 0;
+    f->fim = 0;
+    f->tamanho = tamanho;
+    return f;
+}
+void enfilerar(Fila *f,int vertice){
+    f->dados[f->fim++] = vertice;
+}
+int desenfilerar(Fila *f){
+    return f->dados[f->inicio++];
+}
+bool filaVazia(Fila *f){
+    return f->inicio == f->fim;
+}
+ListaVertice BFS(Grafo_lista *grafo,int inicio){
+    int tamanho = grafo->numVertices;
+    int *visitados = calloc(tamanho,sizeof(int));
+
+    Fila *f = criarFila(grafo->numVertices);
+    ListaVertice vertices; vertices.tamanho = 0;
+    vertices.idx =(int*) malloc(sizeof(int) * tamanho);
+
+
+    visitados[inicio] = 1;
+    enfilerar(f,inicio);
+    
+    int index = 0;
+    while(!filaVazia(f)){
+        int atual = desenfilerar(f);
+        
+        vertices.idx[index] = atual;
+        index++;
+        vertices.tamanho++;
+
+        Vertice *vizinho = grafo->listaAdj[atual];
+        while(vizinho != NULL){
+            int v = vizinho->id;
+           
+            if(!(visitados[v])){
+                visitados[v] = 1;
+                enfilerar(f,v);
+            }
+            vizinho = vizinho->prox;
+        }
+    }
+    free(visitados);
+    free(f->dados);
+    free(f);
+    return vertices;
+}
+
+
+
+
 
 Grafo_lista *iniciarGrafoLista(int numVertices){
 
@@ -59,6 +118,17 @@ void liberar_lista(Grafo_lista *grafo){
     }
     free(grafo->listaAdj);
     free(grafo);
+}
+void imprimir_grafo_lista(Grafo_lista *grafo){
+    for(int i = 0 ; i < grafo->numVertices ; i++){
+        printf("[%d]->",i);
+        Vertice *aux = grafo->listaAdj[i];
+        while(aux != NULL){
+            printf("%d->",aux->id);
+            aux = aux->prox;
+        }
+        printf("*\n");
+    }
 }
 
 
@@ -123,8 +193,8 @@ void ler_inserir(char nome_arq[], Grafo_lista *grafoAdj, Grafo_Matriz *grafoMat)
         int origem, destino,lixo;
         fscanf(file,"%d",&lixo);
         while(fscanf(file,"%d %d",&origem,&destino) == 2){
-            insercao_aresta_matriz(grafoMat,origem-1,destino-1);
-            insercao_aresta_lista(grafoAdj, origem-1, destino-1);
+            insercao_aresta_matriz(grafoMat,origem,destino);
+            insercao_aresta_lista(grafoAdj, origem, destino);
         }
         fclose(file);
     }

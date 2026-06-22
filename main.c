@@ -12,11 +12,18 @@ void teste(Estatisticas est){
     printf("Numero de arestas: %d\n",est.numArestas);
 }
 
+void imprimir_vetor(ListaVertice l){
+
+    for(int i = 0; i < l.tamanho; i++){
+        printf("vetor[%d] = %d\n",i,l.idx[i]);
+    }
+}
+
 
 int main(int argc, char const *argv[])
 {
 
-    char nome_arquivo[] = "grafo_1.txt";
+    char nome_arquivo[] = "ai_studio_code.txt";
 
     int TAM = numero_vetores(nome_arquivo);
     if (TAM <= 0) {
@@ -49,11 +56,17 @@ int main(int argc, char const *argv[])
     teste(estLista);
     puts("\nImprimindo estastiticas Matrizes:");
     teste(estMatriz);
+    printf("\nImprimindo grafo lista:\n");
+    imprimir_grafo_lista(grafoAdj);
+    ListaVertice l = BFS(grafoAdj,1);
+    imprimir_vetor(l);
+    printf("%d\n",l.idx[7]);
 
     liberar_lista(grafoAdj);
     puts("\nGrafo lista liberado com sucesso!");
     liberar_matriz(grafoMat,TAM);
     puts("\nGrafo matriz liberado com sucesso!");
+
 
     return 0;
 }
