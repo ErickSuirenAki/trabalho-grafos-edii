@@ -60,21 +60,29 @@ int grau_vertice_matriz(Grafo_Matriz *grafo, int vertice);
 Estatisticas estatisticas_matriz(Grafo_Matriz *grafo);
 
 
+//DFS
+void DFSVisitaLista(Grafo_lista *g, int v, int *visitado, int *pai, int *nivel);
 
+void DFSLista(Grafo_lista *g, int verticeInicial, int *pai, int *ordem);
 
-//erick
-void DFSVisita(Grafo_lista *g, int v, int *visitado, int *pai, int *nivel);
+void DFSVisitaMatriz(Grafo_Matriz *g, int v, int *visitado, int *pai, int *nivel);
 
-void DFS(Grafo_lista *g, int verticeInicial, int *pai, int *ordem);
+void DFSMatriz(Grafo_Matriz *g, int verticeInicial, int *pai, int *nivel);
 
-void imprimirArvoreDFSLista(int *pai, int *nivel, int numVertices, const char *nomeArquivo);
+void imprimirArvoreDFS(int *pai, int *nivel, int numVertices, const char *nomeArquivo);
 
-void DFS_Componente(Grafo_lista *g, int v, int *visitado, int *listaVertices, int *tamanho);
-
+//Componentes conexas
 int compararComponentes(const void *a, const void *b);
 
-Componente* componentesConexas(Grafo_lista *g, int *numComponentes);
+void DFS_ComponenteLista(Grafo_lista *g, int v, int *visitado, int *listaVertices, int *tamanho);
 
+Componente* componentesConexasLista(Grafo_lista *g, int *numComponentes);
+
+void DFS_ComponenteMatriz(Grafo_Matriz *g,int v,int *visitado, int *listaVertices, int *tamanho);
+
+Componente* componentesConexasMatriz(Grafo_Matriz *g, int *numComponentes);
+
+void escreverComponentes(const char *nomeArquivo, Componente *componentes, int numComponentes);
 
 
 #endif

@@ -1,59 +1,104 @@
-#include "grafo.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "grafo.h"
 
+int main() {
 
-void teste(Estatisticas est){
-    printf("Grau Minimo: %d\n",est.grauMinimo);
-    printf("Grau Medio: %f\n",est.grauMedio);
-    printf("Grau Mediana: %f\n",est.grauMediana);
-    printf("Grau Maximo: %d\n",est.grauMaximo);
-    printf("Numero de vertices: %d\n",est.numVertices);
-    printf("Numero de arestas: %d\n",est.numArestas);
-}
+    char nomeArquivo[] = "grafo.txt";
+    int n = numero_vetores(nomeArquivo);
 
+    if (n <= 0) {
+        printf("Erro ao ler o grafo.\n");
+        return 1;
+    }
+    int opcao;
+    printf("Escolha a representacao do grafo:\n");
+    printf("1 - Lista de adjacencia\n");
+    printf("2 - Matriz de adjacencia\n");
+    printf("Opcao: ");
+    scanf("%d", &opcao);
 
-int main(int argc, char const *argv[])
-{
+    Grafo_lista *gLista = NULL;
+    Grafo_Matriz *gMatriz = NULL;
 
-    char nome_arquivo[] = "grafo_1.txt";
-
-    int TAM = numero_vetores(nome_arquivo);
-    if (TAM <= 0) {
-        printf("Erro ao ler tamanho do grafo.\n");
+    if (opcao == 1) {
+        gLista = iniciarGrafoLista(n);
+        ler_inserir(nomeArquivo, gLista, NULL);
+    }
+    else if (opcao == 2) {
+        gMatriz = iniciarGrafoMatriz(n);
+        ler_inserir(nomeArquivo, NULL, gMatriz);
+    }
+    else {
+        printf("Opcao invalida.\n");
         return 1;
     }
 
-    Grafo_lista *grafoAdj = iniciarGrafoLista(TAM);
-    if (grafoAdj == NULL) {
-        printf("Erro ao inicializar grafo.\n");
+    FILE *saida = fopen("saida_grafo.txt", "w");
+    if (saida == NULL) {
+        printf("Erro ao criar arquivo de saida.\n");
         return 1;
     }
 
-   Grafo_Matriz *grafoMat = iniciarGrafoMatriz(TAM);
-    if (grafoMat == NULL) {
-        printf("Erro ao criar matriz.\n");
-        return 1;
+    fprintf(saida, "SAIDA DO GRAFO\n\n");
+
+    int *pai = malloc(n * sizeof(int));
+    int *nivel = malloc(n * sizeof(int));
+
+    int numComp;
+    Componente *comp = NULL;
+
+    if (opcao == 1) {
+
+        DFSLista(gLista, 0, pai, nivel);
+
+        comp = componentesConexasLista(gLista, &numComp);
+
     }
 
-    ler_inserir(nome_arquivo, grafoAdj, grafoMat);  
-    printf("Grafo carregado com sucesso!\n");
+    else {
 
-    Estatisticas estLista = estatisticas_lista(grafoAdj);
-    printf("Estastiticas lista carregado com sucesso!\n");
+        DFSMatriz(gMatriz, 0, pai, nivel);
 
-    Estatisticas estMatriz = estatisticas_matriz(grafoMat);
-    printf("Estastiticas matriz carregado com sucesso!\n");
+        comp = componentesConexasMatriz(gMatriz, &numComp);
+    }
 
-    puts("\nImprimindo estastiticas Listas:");
-    teste(estLista);
-    puts("\nImprimindo estastiticas Matrizes:");
-    teste(estMatriz);
+    fprintf(saida, "DFS (ARVORE GERADORA)\n");
+    fprintf(saida, "Vertice | Pai | Nivel\n");
 
-    liberar_lista(grafoAdj);
-    puts("\nGrafo lista liberado com sucesso!");
-    liberar_matriz(grafoMat,TAM);
-    puts("\nGrafo matriz liberado com sucesso!");
+    for (int i = 0; i < n; i++) {
+        fprintf(saida, "%d %d %d\n", i, pai[i], nivel[i]);
+    }
+
+    fprintf(saida, "\n");
+
+    fprintf(saida, "COMPONENTES CONEXAS\n");
+    fprintf(saida, "Numero de componentes: %d\n\n", numComp);
+
+    for (int i = 0; i < numComp; i++) {
+        fprintf(saida, "Componente %d (tamanho %d): ",
+                i + 1,
+                comp[i].tamanho);
+
+        for (int j = 0; j < comp[i].tamanho; j++) {
+            fprintf(saida, "%d ", comp[i].vertices[j]);
+        }
+
+        fprintf(saida, "\n");
+    }
+
+    fclose(saida);
+
+    free(pai);
+    free(nivel);
+
+    if (opcao == 1) {
+        liberar_lista(gLista);
+    } else {
+        liberar_matriz(gMatriz, n);
+    }
+
+    printf("Arquivo gerado: saida_grafo.txt\n");
 
     return 0;
 }
