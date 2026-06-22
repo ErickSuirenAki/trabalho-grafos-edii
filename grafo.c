@@ -3,7 +3,8 @@
 #include "grafo.h"
 #include <stdlib.h>
 
-Grafo_lista *inicializarGrafoLista(int numVertices){
+Grafo_lista *iniciarGrafoLista(int numVertices){
+
     Grafo_lista *grafo = malloc(sizeof(Grafo_lista));
     
     if(grafo == NULL) {
@@ -24,19 +25,17 @@ Grafo_lista *inicializarGrafoLista(int numVertices){
     
     return grafo;
 }
-
 Vertice* criarVertice_lista(int idt){
 	Vertice *novoVertice = malloc(sizeof(Vertice));
 	novoVertice->id = idt;
 	novoVertice->prox = NULL;
 	return novoVertice;
 }
-void inserirInicio(Vertice **listaVertice, Vertice *vertice,int index){
-    Vertice *aux = listaVertice[index];
-    listaVertice[index] = vertice;
-    vertice->prox = aux; 
+void inserirInicio(Grafo_lista *grafo, Vertice *vertice,int index){
+   vertice->prox = grafo->listaAdj[index];
+   grafo->listaAdj[index] = vertice;
 }
-void insere_lista(Grafo_lista *grafo, int origem, int destino){
+void insercao_aresta_lista(Grafo_lista *grafo, int origem, int destino){
 	Vertice *novoVertice = criarVertice_lista(destino);
     Vertice *simetricoVertice = criarVertice_lista(origem);
     
@@ -46,39 +45,62 @@ void insere_lista(Grafo_lista *grafo, int origem, int destino){
         free(simetricoVertice);
         return;
     }
-    inserirInicio(grafo->listaAdj, novoVertice, origem);
-    inserirInicio(grafo->listaAdj, simetricoVertice, destino);
+    inserirInicio(grafo, novoVertice, origem);
+    inserirInicio(grafo, simetricoVertice, destino);
     grafo->numArestas++;
 }
-
-
-int **criarMatriz(int tamanho) {
-    int **matriz;
-    int i;
-
-    // Aloca o vetor de ponteiros
-    matriz = (int **)calloc(tamanho, sizeof(int *));
-    if (matriz == NULL)
-        return NULL;
-
-    // Aloca cada linha já preenchida com 0
-    for (i = 0; i < tamanho; i++) {
-        matriz[i] = (int *)calloc(tamanho, sizeof(int));
-
-        if (matriz[i] == NULL) {
-            while (--i >= 0)
-                free(matriz[i]);
-
-            free(matriz);
-            return NULL;
+void liberar_lista(Grafo_lista *grafo){
+    for(int i = 0 ; i < grafo->numVertices ; i++){
+        Vertice *atual = grafo->listaAdj[i];
+        while(atual != NULL){
+            Vertice *prox = atual->prox;
+            free(atual);
+            atual = prox;
         }
     }
-
-    return matriz;
+    free(grafo->listaAdj);
+    free(grafo);
 }
-void inserir_matriz(int **matriz, int origem, int destino){
-    matriz[origem][destino] = 1;
-    matriz[destino][origem] = 1;
+
+
+Grafo_Matriz *iniciarGrafoMatriz(int numVertices){
+    Grafo_Matriz *grafo = malloc(sizeof(Grafo_Matriz));
+    if(grafo == NULL) return NULL;
+
+    grafo->matriz = calloc(numVertices, sizeof(int *));
+
+    if (grafo->matriz == NULL){
+        free(grafo);
+        return NULL;
+    }
+        
+    int i;
+
+    for(i=0 ; i < numVertices ; i++){
+        grafo->matriz[i] = calloc(numVertices,sizeof(int));
+        
+        if(grafo->matriz[i] == NULL){
+            liberar_matriz(grafo,i);
+            return NULL;
+        }    
+    }
+    grafo->numArestas = 0;
+    grafo->numVertices = numVertices;
+    return grafo;
+}
+void liberar_matriz(Grafo_Matriz *grafo, int tam){
+    for(int i = 0; i < tam; i++){
+        free(grafo->matriz[i]);
+    }
+    free(grafo->matriz);
+    free(grafo);
+}
+void insercao_aresta_matriz(Grafo_Matriz *grafo, int origem, int destino){
+    if(grafo->matriz[origem][destino] == 0){
+        grafo->matriz[origem][destino] = 1;
+        grafo->matriz[destino][origem] = 1;
+        grafo->numArestas++;
+    }
 }
 
 
@@ -93,7 +115,7 @@ int numero_vetores(char nome_arq[]){
         return tam;
     }
 }
-void ler_inserir(char nome_arq[], Grafo_lista *grafo, int **matriz){
+void ler_inserir(char nome_arq[], Grafo_lista *grafoAdj, Grafo_Matriz *grafoMat){
     FILE *file = fopen(nome_arq,"r");
     if(file == NULL){
         printf("ERRO, não foi possivel abrir o arquivo: %s",nome_arq);
@@ -102,18 +124,96 @@ void ler_inserir(char nome_arq[], Grafo_lista *grafo, int **matriz){
         int origem, destino,lixo;
         fscanf(file,"%d",&lixo);
         while(fscanf(file,"%d %d",&origem,&destino) == 2){
-            inserir_matriz(matriz,origem-1,destino-1);
-            insere_lista(grafo, origem-1, destino-1);
+            insercao_aresta_matriz(grafoMat,origem-1,destino-1);
+            insercao_aresta_lista(grafoAdj, origem-1, destino-1);
         }
         fclose(file);
     }
+}
+
+
+int comp(const void * a, const void *b){
+    return (*(int *)a - *(int *)b);
+}
+double mediana(int vetor[],int tam){
+    qsort(vetor,tam,sizeof(int),comp);
+     if (tam % 2 == 1) {
+       return vetor[tam / 2];
+    } else {
+        return (double)((vetor[tam / 2 - 1] +  vetor[tam / 2])) / 2.0;
+    }
+}
+
+
+int grau_vertice_lista(Grafo_lista *grafo, int n){
+    Vertice *aux = grafo->listaAdj[n];
+    int grau = 0;
+    while(aux != NULL){
+        aux = aux->prox;
+        grau++;
+    }
+    return grau;
+}
+Estatisticas estatisticas_lista(Grafo_lista *grafo){
+    Estatisticas est;
+
+    int grau;
+    int somaGrau = 0;
+    int TAM = grafo->numVertices;
+
+    int vertices_grau[TAM];
+    for(int i = 0 ; i < TAM ; i++){
+        grau = grau_vertice_lista(grafo,i);
+        vertices_grau[i] = grau;
+        somaGrau += grau;
+    }
+
+    est.grauMediana = mediana(vertices_grau,TAM);
+    est.grauMinimo = vertices_grau[0];
+    est.grauMedio = (double) somaGrau / (double) TAM;
+    est.grauMaximo = vertices_grau[TAM-1];
+    est.numVertices = grafo->numVertices;
+    est.numArestas = grafo->numArestas;
+    return est;
+}
+
+
+int grau_vertice_matriz(Grafo_Matriz *grafo, int vertice){
+    int grau = 0;
+    for(int j = 0; j < grafo->numVertices ; j++){
+        if(grafo->matriz[vertice][j] == 1){
+            grau++;
+        } 
+    }
+    return grau;
+}
+Estatisticas estatisticas_matriz(Grafo_Matriz *grafo){
+    Estatisticas est;
+
+    int grau;
+    int somaGrau = 0;
+    int tam = grafo->numVertices;
+    
+    int vertices_grau[tam];
+    for(int i = 0; i < tam ; i++){
+        grau = grau_vertice_matriz(grafo,i);
+        vertices_grau[i] = grau;
+        somaGrau += grau;
+    }
+    est.grauMediana = mediana(vertices_grau,tam);
+    est.grauMinimo = vertices_grau[0];
+    est.grauMedio = (double) somaGrau / (double) tam;
+    est.grauMaximo = vertices_grau[tam-1];
+    est.numVertices = grafo->numVertices;
+    est.numArestas = grafo->numArestas;
+    return est;
 }
 
 //item 4 (busca em porfundidade) - ERICk >>>>> falta salvar as informações num arquivo
 void DFSVisita(Grafo_lista *g, int v, int *visitado, int *pai, int *nivel) {
     visitado[v] = 1;//coloca o vertice que o usuario escolheu como visitado ja
 
-    Vertice *atual = g->listaAdj[v].prox; // vizinho de v
+    Vertice *atual = g->listaAdj[v]; // vizinho de v
     while (atual != NULL) { // ate que chegue no nulo
         int u = atual->id; //guarda o identificador do vizinho atual
         if (!visitado[u]) { //aqui ele so vai descer se o vizinho nao tiver sido visitado
@@ -143,4 +243,76 @@ void DFS(Grafo_lista *g, int verticeInicial, int *pai, int *nivel) {
     printf("Tempo de execucao da DFS: %f segundos\n", tempo);
 
     free(visitado); // libera o vetor de visitados
+}
+
+void imprimirArvoreDFSLista(int *pai, int *nivel, int numVertices, const char *nomeArquivo) {
+    FILE *arquivo = fopen(nomeArquivo, "w");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir arquivo de saida.\n");
+        return;
+    }
+
+    fprintf(arquivo, "Vertice Pai Nivel\n");
+    for (int i = 0; i < numVertices; i++) {
+        fprintf(arquivo, "%d %d %d\n", i, pai[i], nivel[i]);
+    }
+
+    fclose(arquivo);
+}
+
+
+
+//item 6 (componentes conexos) - Erick
+void DFS_Componente(Grafo_lista *g, int v, int *visitado, int *listaVertices, int *tamanho) {
+    visitado[v] = 1;
+    listaVertices[(*tamanho)++] = v;
+    // guarda v na lista da componente atual e incrementa o contador de tamanho
+
+    Vertice *atual = g->listaAdj[v];
+    while (atual != NULL) {
+        int u = atual->id;
+        if (!visitado[u]) {
+            DFS_Componente(g, u, visitado, listaVertices, tamanho);
+        }
+        atual = atual->prox;
+    }
+}
+
+int compararComponentes(const void *a, const void *b) {
+    Componente *compA = (Componente *)a;
+    Componente *compB = (Componente *)b;
+
+    return compB->tamanho - compA->tamanho;
+}
+
+
+Componente* componentesConexas(Grafo_lista *g, int *numComponentes) {
+    int n = g->numVertices;
+    int *visitado = calloc(n, sizeof(int));
+
+    Componente *componentes = malloc(n * sizeof(Componente));
+    int contador = 0;
+    for (int i = 0; i < n; i++) {
+        if (!visitado[i]) {
+            int *listaTemp = malloc(n * sizeof(int));
+            int tamanho = 0;
+
+            DFS_Componente(g, i, visitado, listaTemp, &tamanho);
+            int *listaFinal = malloc(tamanho * sizeof(int));
+            for (int j = 0; j < tamanho; j++) {
+                listaFinal[j] = listaTemp[j];
+            }
+            free(listaTemp);
+            componentes[contador].tamanho = tamanho;
+            componentes[contador].vertices = listaFinal;
+            contador++;
+        }
+    }
+
+    componentes = realloc(componentes, contador * sizeof(Componente));
+
+    qsort(componentes, contador, sizeof(Componente), compararComponentes);
+    *numComponentes = contador;
+    free(visitado);
+    return componentes;
 }
