@@ -40,7 +40,9 @@ typedef struct{
 }Estatisticas;
 
 typedef struct{
-    int *idx;
+    int *caminho;
+    int *pai;
+    int *nivel;
     int tamanho;
 }ResultadoBFS;
 
@@ -56,7 +58,7 @@ ResultadoBFS BFS_matriz(Grafo_Matriz *grafo,int inicio);
 
 
 double calcular_execucao(clock_t inicio, clock_t fim);
-
+bool abrirArquivo(char caminho_arquivo[]);
 
 // funções
 

@@ -11,6 +11,24 @@ void teste(Estatisticas est){
     printf("Numero de vertices: %d\n",est.numVertices);
     printf("Numero de arestas: %d\n",est.numArestas);
 }
+void ler_bfs(ResultadoBFS bfs, int inicio){
+    printf("Caminho = ");
+    for(int i = 0; i < bfs.tamanho; i++){
+        printf("%d ", bfs.caminho[i]);
+    }
+    printf("\n");
+
+    printf("Pai = ");
+    for(int i = 1; i <= bfs.tamanho; i++){
+        printf("%d ", bfs.pai[i]);
+    }
+    printf("\n");
+    printf("Nivel = ");
+    for(int i = 1; i <= bfs.tamanho; i++){
+        printf("%d ", bfs.nivel[i]);
+    }
+
+}
 
 void calcular_memoria_lista(long V, long E, int direcionado) {
 
@@ -33,8 +51,8 @@ void calcular_memoria_lista(long V, long E, int direcionado) {
 void calcular_memoria_matriz(int tam){
     long long bytes = 
         sizeof(Grafo_Matriz) +                          
-        (long long)tam * sizeof(int*) +                 
-        (long long)tam * sizeof(bool) +                 
+        (long long)tam * sizeof(bool*) +                 
+        (long long)tam * sizeof(int) +                 
         (long long)tam * tam * sizeof(bool);            
 
     double mb = (double)bytes / 1048576.0;
@@ -50,6 +68,7 @@ void calcular_memoria_matriz(int tam){
 
 double execuxao_lista(char nome_arquivo[],Grafo_lista *grafoAdj){
     double tempo_execucao = 0;
+    
     clock_t inicio,fim;
     puts("\n==== Lista Adjacente ====");
     
@@ -68,11 +87,13 @@ double execuxao_lista(char nome_arquivo[],Grafo_lista *grafoAdj){
     puts("Realizando BFS...");
     
     inicio = clock();
-    BFS_lista(grafoAdj,1);
+    ResultadoBFS bfs = BFS_lista(grafoAdj,1);
     fim = clock();
     tempo_execucao += calcular_execucao(inicio,fim);
     
     puts("BFS carregado com sucesso!!");
+    puts("Imprimindo BFS: ");
+    ler_bfs(bfs,1);
     puts("\nImprimindo estastiticas Listas:");
     teste(estLista);
     
@@ -99,11 +120,13 @@ double execuxao_matriz(char nome_arquivo[],Grafo_Matriz *grafoMat){
 
     puts("Realizando BFS...");
     inicio = clock();
-    BFS_matriz(grafoMat,1);
+    ResultadoBFS bfs = BFS_matriz(grafoMat,1);
     fim = clock();
     tempo_execucao += calcular_execucao(inicio,fim);
     
     puts("BFS carregado com sucesso!!");
+    puts("Imprimindo BFS: ");
+    ler_bfs(bfs,1);
     puts("\nImprimindo estastiticas Matrizes:");
     teste(estMatriz);
 
@@ -114,17 +137,22 @@ int main(int argc, char const *argv[])
 {
    
     clock_t inicio, fim;
-        char nome_arquivo[] = "grafo_4.txt";
-        char arq = '1';
-    for(int i = 0 ; i < 6 ; i++){
+        char nome_arquivo[] = "testeBFS.txt";
+
         double tempo_execucao_lista = 0;
         double tempo_execucao_matriz = 0;
-        nome_arquivo[6] = arq++;
+
         printf("\n==== %s ====\n",nome_arquivo);
+        
+        if(!abrirArquivo(nome_arquivo)){
+            printf("ERRO: Nao foi possivel abrir o arquivo: %s",nome_arquivo);
+            return 0;
+        }
 
         puts("Lendo o arquivo...");
         int tam = numero_vetores(nome_arquivo) + 1;
         int numArestas = numero_arestas(nome_arquivo);
+
 
         puts("Carregando a Lista na memoria...");
         inicio  = clock();
@@ -166,7 +194,7 @@ int main(int argc, char const *argv[])
         liberar_matriz(grafoMat,tam);
         puts("\nGrafo matriz liberado com sucesso!");
 
-    }
+    
     
     return 0;
 }

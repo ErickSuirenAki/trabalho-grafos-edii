@@ -23,8 +23,14 @@ int desenfilerar(Fila *f){
 bool filaVazia(Fila *f){
     return f->inicio == f->fim;
 }
+
+
 double calcular_execucao(clock_t inicio, clock_t fim){
     return ((double)(fim - inicio) * 1000.0) / CLOCKS_PER_SEC;
+}
+bool abrirArquivo(char caminho_arquivo[]){
+    FILE *file = fopen(caminho_arquivo,"r");
+    return (file != NULL);
 }
 
 
@@ -35,19 +41,23 @@ ResultadoBFS BFS_lista(Grafo_lista *grafo,int inicio){
     int tamanho = grafo->tam;
     int *visitados = calloc(tamanho,sizeof(int));
 
+
     Fila *f = criarFila(grafo->tam);
     ResultadoBFS vertices; vertices.tamanho = 0;
-    vertices.idx =(int*) malloc(sizeof(int) * tamanho);
+    vertices.caminho =(int*) malloc(sizeof(int) * tamanho);
+    vertices.nivel = malloc(grafo->tam * sizeof(int));
 
-
+    vertices.nivel[inicio] = 0;
     visitados[inicio] = 1;
     enfilerar(f,inicio);
+    vertices.pai = malloc(grafo->tam * sizeof(int));
+    for (int i = 0; i < grafo->tam; i++) vertices.pai[i] = -1;
     
     int index = 0;
     while(!filaVazia(f)){
         int atual = desenfilerar(f);
         
-        vertices.idx[index] = atual;
+        vertices.caminho[index] = atual;
         index++;
         vertices.tamanho++;
 
@@ -57,6 +67,8 @@ ResultadoBFS BFS_lista(Grafo_lista *grafo,int inicio){
            
             if(!(visitados[v])){
                 visitados[v] = 1;
+                vertices.pai[v] = atual;
+                vertices.nivel[v] = vertices.nivel[atual] + 1;
                 enfilerar(f,v);
             }
             vizinho = vizinho->prox;
@@ -70,12 +82,19 @@ ResultadoBFS BFS_lista(Grafo_lista *grafo,int inicio){
 }
 ResultadoBFS BFS_matriz(Grafo_Matriz *grafo,int inicio){
     int tamanho = grafo->tam;
-    int *visitado = calloc(tamanho,sizeof(int));
 
-    Fila *fila = criarFila(grafo->tam);
+    //inicializa as variaveis e fila
     ResultadoBFS vertices; vertices.tamanho = 0;
-    vertices.idx =(int*) malloc(sizeof(int) * tamanho);
+    int *visitado = calloc(tamanho,sizeof(int));
+   
+    Fila *fila = criarFila(grafo->tam);
+   
+    vertices.caminho =(int*) malloc(sizeof(int) * tamanho);
+    vertices.pai = malloc(grafo->tam * sizeof(int));
+    for (int i = 0; i < grafo->tam; i++) vertices.pai[i] = -1;
+    vertices.nivel = malloc(grafo->tam * sizeof(int));
 
+    vertices.nivel[inicio] = 0;
     visitado[inicio] = 1;
     enfilerar(fila,inicio);
 
@@ -83,12 +102,14 @@ ResultadoBFS BFS_matriz(Grafo_Matriz *grafo,int inicio){
     while(!filaVazia(fila)){
         int atual = desenfilerar(fila);
         
-        vertices.idx[index] = atual;
+        vertices.caminho[index] = atual; //adiciona o elemento no vetor
         index++; vertices.tamanho++;
 
         for(int i = 0 ; i < tamanho ; i++){
             if(grafo->matriz[atual][i] && !visitado[i]){
                 visitado[i] = 1;
+                vertices.pai[i] = atual;
+                vertices.nivel[i] = vertices.nivel[atual] + 1;
                 enfilerar(fila,i);
             }
         }
@@ -98,7 +119,6 @@ ResultadoBFS BFS_matriz(Grafo_Matriz *grafo,int inicio){
     free(fila);
 
     return vertices;
-
 }
 
 
@@ -130,7 +150,7 @@ Vertice* criarVertice_lista(Grafo_lista *g,int vertice){
     return v;
 }
 void insercao_aresta_lista(Grafo_lista *g, int origem, int destino){
-	Vertice *v1 = criarVertice_lista(g,destino);
+    Vertice *v1 = criarVertice_lista(g,destino);
     v1->prox = g->listaAdj[origem];
     g->listaAdj[origem] = v1;
      
