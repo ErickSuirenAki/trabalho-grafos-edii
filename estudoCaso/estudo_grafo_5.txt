@@ -1,0 +1,27 @@
+---------- Lista Adjacente ----------
+==== estudoCaso/estudo_grafo_5.txt ====
+Estatisticas da lista:
+Memoria utilizada: 457.32 mb
+Numero de vertices: 4843750
+Numero de arestas: 13168928
+Grau minimo: 1
+Grau maximo: 22
+Grau medio: 5.44
+Grau mediana: 5.00
+Tempo medio de execucao em 100 BFS: 1114.24ms
+BFS inicio: 1
+Pai(10): 1888350
+Pai(20): -1
+Pai(30): 4692602
+BFS inicio: 2
+Pai(10): -1
+Pai(20): -1
+Pai(30): -1
+BFS inicio: 3
+Pai(10): 1888350
+Pai(20): -1
+Pai(30): 191713
+Distancia entre pares(10,20): -1
+Distancia entre pares(10,30): 9
+Distancia entre pares(20,30): -1
+==== fim da execucao ====

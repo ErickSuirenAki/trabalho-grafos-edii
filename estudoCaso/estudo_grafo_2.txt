@@ -1,0 +1,54 @@
+---------- Lista Adjacente ----------
+==== estudoCaso/estudo_grafo_2.txt ====
+Estatisticas da lista:
+Memoria utilizada: 40.24 mb
+Numero de vertices: 49948
+Numero de arestas: 1299794
+Grau minimo: 1
+Grau maximo: 112
+Grau medio: 52.05
+Grau mediana: 55.00
+Tempo medio de execucao em 100 BFS: 73.50ms
+BFS inicio: 1
+Pai(10): -1
+Pai(20): -1
+Pai(30): -1
+BFS inicio: 2
+Pai(10): 11747
+Pai(20): -1
+Pai(30): -1
+BFS inicio: 3
+Pai(10): -1
+Pai(20): 46738
+Pai(30): 21931
+Distancia entre pares(10,20): -1
+Distancia entre pares(10,30): -1
+Distancia entre pares(20,30): 3
+==== fim da execucao ====
+---------- Matriz Adjacente ----------
+==== estudoCaso/estudo_grafo_2.txt ====
+Estatisticas da lista:
+Memoria utilizada: 2379.90 mb
+Numero de vertices: 49948
+Numero de arestas: 1299794
+Grau minimo: 1
+Grau maximo: 112
+Grau medio: 52.05
+Grau mediana: 55.00
+Tempo medio de execucao em 100 BFS: 1418.58ms
+BFS inicio: 1
+Pai(10): -1
+Pai(20): -1
+Pai(30): -1
+BFS inicio: 2
+Pai(10): 1351
+Pai(20): -1
+Pai(30): -1
+BFS inicio: 3
+Pai(10): -1
+Pai(20): 46738
+Pai(30): 12999
+Distancia entre pares(10,20): -1
+Distancia entre pares(10,30): -1
+Distancia entre pares(20,30): 3
+==== fim da execucao ====
