@@ -18,6 +18,10 @@ Fila *criarFila(int tamanho){
     f->tamanho = tamanho;
     return f;
 }
+void liberar_fila(Fila *f){
+    if(f->dados != NULL) free(f->dados);
+    if(f != NULL)        free(f);
+}
 void enfilerar(Fila *f,int vertice){
     f->dados[f->fim++] = vertice;
 }
@@ -33,11 +37,54 @@ int gerar_numero_aletorio(int limite){
     return rand() % limite;
 }
 double calcular_execucao(clock_t inicio, clock_t fim){
-    return ((double)(fim - inicio)); //tempo execucao ms
+    return (double)(1000.0 * (fim - inicio) / CLOCKS_PER_SEC); //tempo execucao ms
 }
-bool abrirArquivo(char caminho_arquivo[]){
-    FILE *file = fopen(caminho_arquivo,"r");
-    return (file != NULL);
+double BFS_100(Grafo_Matriz *grafoMat,Grafo_lista *grafoLista,int tipoGrafo){
+    int inicio;
+    int tam = (tipoGrafo == 1) ? grafoLista->tam : grafoMat->tam;
+
+    ResultadoBFS bfs;
+    double soma_tempo = 0.0;
+    //gera um numero aleatorio dentro do intervalo, faz o bfs e faz a media das 100 execucoes
+    for(int cont = 0; cont < 100 ; cont++){
+        inicio = gerar_numero_aletorio(tam);
+        if(tipoGrafo == 1){
+            bfs = BFS_lista(grafoLista,inicio);
+        }else{
+            bfs = BFS_matriz(grafoMat,inicio);
+        }
+        if(!bfs.valido) return -2.0; //erro de execucao
+        
+        liberar_bfs(bfs);
+        soma_tempo += bfs.tempo_execucao;
+    }
+    double resultado = (double) soma_tempo / 100.0; //media de tempo em milisegundos
+    return resultado;
+}
+double DFS_100(Grafo_Matriz *gMatriz, Grafo_lista *gLista,int tipoGrafo){
+    clock_t inicio,fim;
+    int verticeInicial;
+    int tam = (tipoGrafo == 1) ? gLista->tam : gMatriz->tam;
+
+    double tempo_execucao = 0;
+    for(int cont = 0; cont < 100 ; cont++){
+        int *pai = malloc(sizeof(int) * tam);
+        int *nivel = malloc(sizeof(int) * tam);
+        
+        verticeInicial = gerar_numero_aletorio(tam);
+        inicio = clock();
+        if(tipoGrafo == 1){
+            DFSLista(gLista,verticeInicial,pai,nivel);
+        }else{
+            DFSMatriz(gMatriz,verticeInicial,pai,nivel);
+        }
+        fim = clock();
+        
+        free(pai); free(nivel);
+        tempo_execucao += calcular_execucao(inicio,fim);
+    }
+    double resultado = (double) tempo_execucao / 100.0; //media de tempo em milisegundos
+    return resultado;
 }
 
 //calcular memoria utilizada
@@ -101,7 +148,7 @@ ResultadoBFS BFS_lista(Grafo_lista *grafo,int inicio){
         vertices.valido = false;
         return vertices;
     }
-
+    origem = clock();
     vertices.nivel[inicio] = 0;
     visitados[inicio] = 1;
     enfilerar(fila,inicio);
@@ -128,8 +175,7 @@ ResultadoBFS BFS_lista(Grafo_lista *grafo,int inicio){
         }
     }
     free(visitados);
-    free(fila->dados);
-    free(fila);
+    liberar_fila(fila);
     
     fim = clock();
     vertices.tempo_execucao = calcular_execucao(origem,fim);
@@ -176,8 +222,7 @@ ResultadoBFS BFS_matriz(Grafo_Matriz *grafo,int inicio){
         }
     }
     free(visitado);
-    free(fila->dados);
-    free(fila);
+    liberar_fila(fila);
 
     fim = clock();
     vertices.tempo_execucao = calcular_execucao(origem,fim);
@@ -191,8 +236,6 @@ void liberar_bfs(ResultadoBFS bfs){
 //operacoes que usam BFS
 int distancia_pares_lista(Grafo_lista *g,int inicio,int index_pai){
     ResultadoBFS bfs = BFS_lista(g,inicio);
-    
-    if(!bfs.valido) return -2; //erro de execucao
 
     int distancia = bfs.nivel[index_pai];
     liberar_bfs(bfs);
@@ -201,61 +244,13 @@ int distancia_pares_lista(Grafo_lista *g,int inicio,int index_pai){
 int distancia_pares_matriz(Grafo_Matriz *g,int inicio,int index_pai){
     ResultadoBFS bfs = BFS_matriz(g,inicio);
 
-    if(!bfs.valido) return -2; //erro de execucao
-    
     int distancia = bfs.nivel[index_pai];
     liberar_bfs(bfs);
     return distancia;
 }
-bool pai_vertices_lista(Grafo_lista *g, EstudoCaso *estudo){
-    ResultadoBFS bfs1 = BFS_lista(g, 1);
-    ResultadoBFS bfs2 = BFS_lista(g, 2);
-    ResultadoBFS bfs3 = BFS_lista(g, 3);
-
-    if(!bfs1.valido || !bfs2.valido || !bfs3.valido) return false; //erro de execucao
-
-    estudo->pai[0][0] = bfs1.pai[10];
-    estudo->pai[0][1] = bfs1.pai[20];
-    estudo->pai[0][2] = bfs1.pai[30];
-
-    estudo->pai[1][0] = bfs2.pai[10];
-    estudo->pai[1][1] = bfs2.pai[20];
-    estudo->pai[1][2] = bfs2.pai[30];
-
-    estudo->pai[2][0] = bfs3.pai[10];
-    estudo->pai[2][1] = bfs3.pai[20];
-    estudo->pai[2][2] = bfs3.pai[30];
-
-    liberar_bfs(bfs1);
-    liberar_bfs(bfs2);
-    liberar_bfs(bfs3);
-    return true;
+int pai_vertices(int *pai,int vertice){
+    return pai[vertice];
 }
-bool pai_vertices_matriz(Grafo_Matriz *g, EstudoCaso *estudo){
-    ResultadoBFS bfs1 = BFS_matriz(g, 1);
-    ResultadoBFS bfs2 = BFS_matriz(g, 2);
-    ResultadoBFS bfs3 = BFS_matriz(g, 3);
-
-    if(!bfs1.valido || !bfs2.valido || !bfs3.valido) return false; //erro de execucao
-    
-    estudo->pai[0][0] = bfs1.pai[10];
-    estudo->pai[0][1] = bfs1.pai[20];
-    estudo->pai[0][2] = bfs1.pai[30];
-
-    estudo->pai[1][0] = bfs2.pai[10];
-    estudo->pai[1][1] = bfs2.pai[20];
-    estudo->pai[1][2] = bfs2.pai[30];
-
-    estudo->pai[2][0] = bfs3.pai[10];
-    estudo->pai[2][1] = bfs3.pai[20];
-    estudo->pai[2][2] = bfs3.pai[30];
-
-    liberar_bfs(bfs1);
-    liberar_bfs(bfs2);
-    liberar_bfs(bfs3);
-}
-
-
 
 //lista Implementacao
 Grafo_lista *iniciarGrafoLista(int tam, int numArestas){
@@ -315,7 +310,7 @@ void imprimir_grafo_lista(Grafo_lista *grafo){
 
 //matriz Implementacao
 Grafo_Matriz *iniciarGrafoMatriz(int tam){
-    if(tam > 50000) return NULL; //ta maluco, vai acabar com a ram
+    if(tam > 50000) return NULL; // limite de ram, acima disso apenas 16gb pra cima
     
     Grafo_Matriz *grafo = calloc(1,sizeof(Grafo_Matriz));
     if(grafo == NULL) return NULL;
@@ -329,7 +324,7 @@ Grafo_Matriz *iniciarGrafoMatriz(int tam){
         
     int i;
 
-    for(i=0 ; i < tam ; i++){
+    for(i=0 ; i < tam ; i++){ 
         grafo->matriz[i] = calloc(tam,sizeof(bool));
         
         if(grafo->matriz[i] == NULL){
@@ -392,41 +387,25 @@ int numero_arestas(char nome_arq[]){
         return cont;
     }   
 }
-double ler_inserir_lista(char nome_arq[], Grafo_lista *grafoAdj){
-    FILE *file = fopen(nome_arq,"r");
-    double tempo_execucao = 0.0;
-
-    int origem, destino,lixo;
-    fscanf(file,"%d",&lixo);
+void ler_inserir_grafo(char nome_arq[],Grafo_Matriz *grafoMat, Grafo_lista *grafoAdj, int tipoGrafo){
     
-    clock_t inicio,fim;
-
-    while(fscanf(file,"%d %d",&origem,&destino) == 2){
-        inicio = clock();
-        insercao_aresta_lista(grafoAdj, origem, destino);
-        fim = clock();
-        tempo_execucao += calcular_execucao(inicio,fim);
-    }
-    fclose(file);
-    return tempo_execucao; 
-}
-double ler_inserir_matriz(char nome_arq[],Grafo_Matriz *grafoMat){
     FILE *file = fopen(nome_arq,"r");
-    
-    double tempo_execucao = 0.0;
+    if(file == NULL)return;
+
     int origem, destino,lixo;
     clock_t inicio,fim;
 
     fscanf(file,"%d",&lixo);
 
     while(fscanf(file,"%d %d",&origem,&destino) == 2){
-        inicio = clock();
-        insercao_aresta_matriz(grafoMat, origem, destino);
-        fim = clock();
-        tempo_execucao += ((double)(fim - inicio) * 1000.0) / CLOCKS_PER_SEC;
+        // 1 == listaAdjascente  // 0 == matrizAdjascente
+        if(tipoGrafo == 1){  
+            insercao_aresta_lista(grafoAdj, origem, destino);
+        } else {
+            insercao_aresta_matriz(grafoMat,origem,destino);
+        }
     }   
     fclose(file);
-    return tempo_execucao;
 }
 
 //algoritimo de ordenacao
@@ -446,58 +425,16 @@ double mediana(int *vetor,int tam){
 }
 
 //estatisticas lista
-int grau_vertice_lista(Grafo_lista *grafo, int idx){
-    return grafo->graus[idx];
-}
 Estatisticas estatisticas_lista(Grafo_lista *g){
+    return calcular_estatisticas_base(g->graus, g->tam, g->numArestas);
+}
+Estatisticas estatisticas_matriz(Grafo_Matriz *g){
+    return calcular_estatisticas_base(g->graus, g->tam, g->numArestas);
+}
+Estatisticas calcular_estatisticas_base(int *vetor_graus, int numVertices, int numArestas) {
     Estatisticas est;
     est.valido = true;
-    int minGrau = -1;
-    int maxGrau = -1;
-    int grau,somaGrau=0;
-    int numVertices = g->tam - 1;
-   
-    int *copia_graus = malloc(numVertices * sizeof(int));
-    if(copia_graus == NULL){ //error de execucao
-        est.valido = false;
-        return est;
-    }
-
-    for(int i = 0; i < numVertices ; i++){
-        grau = grau_vertice_lista(g, i + 1);
-        copia_graus[i] = grau;
-        somaGrau += grau;
-        if(i == 0){
-            maxGrau = grau;
-            minGrau = grau;
-        }else{
-            if(grau > maxGrau) maxGrau = grau;
-            if(grau < minGrau) minGrau = grau;
-        }
-    }
-   
-    est.grauMinimo = minGrau;
-    est.grauMaximo = maxGrau;
-    est.grauMedio  = (double)somaGrau / (double) numVertices;
-    est.grauMediana = mediana(copia_graus,numVertices);
-    est.numArestas = g->numArestas;
-    est.numVertices= numVertices;
-
-    free(copia_graus);
-    return est;
-}
-
-//estatisticas matriz
-int grau_vertice_matriz(Grafo_Matriz *grafo, int idx){
-   return grafo->graus[idx];
-}
-Estatisticas estatisticas_matriz(Grafo_Matriz *grafo){
-    Estatisticas est;
-    est.valido = true;
-    int minGrau = -1;
-    int maxGrau = -1;
-    int grau,somaGrau=0;
-    int numVertices = grafo->tam - 1;
+    int minGrau = -1, maxGrau = -1, somaGrau = 0;
    
     int *copia_graus = malloc(numVertices * sizeof(int));
     if(copia_graus == NULL){
@@ -505,72 +442,68 @@ Estatisticas estatisticas_matriz(Grafo_Matriz *grafo){
         return est;
     }
 
-    int i;
-    for(i = 0; i < numVertices ; i++){
-        grau = grau_vertice_matriz(grafo, i + 1);
+    for(int i = 0; i < numVertices ; i++){
+        int grau = vetor_graus[i + 1]; 
         copia_graus[i] = grau;
         somaGrau += grau;
+        
         if(i == 0){
             maxGrau = grau;
             minGrau = grau;
-        }else{
+        } else {
             if(grau > maxGrau) maxGrau = grau;
             if(grau < minGrau) minGrau = grau;
         }
     }
-
-    est.grauMaximo = maxGrau;
-    est.grauMedio  = (double)somaGrau / (double) numVertices;
-    est.grauMediana = mediana(copia_graus, numVertices);
+   
     est.grauMinimo = minGrau;
-    est.numArestas = grafo->numArestas;
+    est.grauMaximo = maxGrau;
+    est.grauMedio  = (double)somaGrau / (double)numVertices;
+    est.grauMediana = mediana(copia_graus, numVertices);
+    est.numArestas = numArestas;
     est.numVertices= numVertices;
-    
+
     free(copia_graus);
     return est;
 }
 
 //arquivo estudo de casos
-bool criar_arquivo_estudo(char nome_arq[]){
-    FILE *teste = fopen(nome_arq,"w");
-    if(teste != NULL){
-        fclose(teste);
-        return true;
-    }
-    return false;
-}
-void escrever_arquivo(EstudoCaso e,char nome_arq[],char tipo_grafo[]){
-    FILE *file = fopen(nome_arq,"a");
-    if(file == NULL){
-        printf("\nERRO: nao foi possivel criar um arquivo");
+void escrever_arquivo(EstudoCaso e,char nomeArquivo[],int opcao){
+    FILE *saida = fopen("saida_grafo.txt", "w");
+    if (saida == NULL) {
+        printf("Erro ao criar arquivo de saida.\n");
         return;
     }
-    fprintf(file,"---------- %s ----------\n",tipo_grafo);
-    fprintf(file,"==== %s ====\n",nome_arq);
-    fprintf(file,"Estatisticas da lista:\n");
-    fprintf(file,"Memoria utilizada: %.2f mb\n",e.memoria_utilizada);
-    fprintf(file, "Numero de vertices: %d\n", e.status.numVertices);
-    fprintf(file, "Numero de arestas: %d\n", e.status.numArestas);
-    fprintf(file, "Grau minimo: %d\n", e.status.grauMinimo);
-    fprintf(file, "Grau maximo: %d\n", e.status.grauMaximo);
-    fprintf(file, "Grau medio: %.2f\n", e.status.grauMedio);
-    fprintf(file, "Grau mediana: %.2f\n", e.status.grauMediana);
-    fprintf(file,"Tempo medio de execucao em 100 BFS: %.2fms\n",e.tempo_medio_BFS);
-    
-    int vertices[] = {10,20,30};
-    for(int i = 0 ; i < 3 ; i++){
-        fprintf(file,"BFS inicio: %d\n",i+1);
-        for(int j = 0; j < 3 ; j++){
-            fprintf(file,"Pai(%d): %d\n",vertices[j],e.pai[i][j]);
+
+    fprintf(saida, "================================================\n");
+    fprintf(saida, "           RESULTADOS DO GRAFO\n");
+    fprintf(saida, "================================================\n\n");
+    fprintf(saida, "Arquivo de entrada : %s\n", nomeArquivo);
+    fprintf(saida, "Representacao      : %s\n\n", opcao == 1 ? "Lista de adjacencia" : "Matriz de adjacencia");
+    fprintf(saida, "================================================\n");
+    fprintf(saida, "  ESTATISTICAS DO GRAFO\n");
+    fprintf(saida, "================================================\n\n");
+    fprintf(saida, "Numero de vertices : %d\n", e.status.numVertices);
+    fprintf(saida, "Numero de arestas  : %d\n", e.status.numArestas);
+    fprintf(saida, "Grau minimo        : %d\n", e.status.grauMinimo);
+    fprintf(saida, "Grau maximo        : %d\n", e.status.grauMaximo);
+    fprintf(saida, "Grau medio         : %.2f\n", e.status.grauMedio);
+    fprintf(saida, "Mediana de grau    : %.2f\n\n", e.status.grauMediana);
+    fprintf(saida, "================================================\n");
+    fprintf(saida, "  COMPONENTES CONEXAS\n");
+    fprintf(saida, "================================================\n\n");
+    fprintf(saida, "Numero de componentes: %d\n\n", e.numComp);
+
+    for (int i = 0; i < e.numComp; i++) {
+        fprintf(saida, "Componente %d (tamanho: %d)\n", i + 1, e.comp[i].tamanho);
+        fprintf(saida, "Vertices: ");
+        for (int j = 0; j < e.comp[i].tamanho; j++) {
+            fprintf(saida, "%d ", e.comp[i].vertices[j]);
         }
+        fprintf(saida, "\n\n");
     }
-    fprintf(file,"Distancia entre pares(10,20): %d\n",e.distancia_pares[0]);
-    fprintf(file,"Distancia entre pares(10,30): %d\n",e.distancia_pares[1]);
-    fprintf(file,"Distancia entre pares(20,30): %d\n",e.distancia_pares[2]);
-    fprintf(file,"==== fim da execucao ====\n");
-    char somente_nome[50];
-    sscanf(nome_arq, "%*[^/]/%s",somente_nome);
-    printf("Criado estudo da (%s) no diretorio /estudoCaso com nome: %s\n",tipo_grafo,somente_nome);
+    
+    fclose(saida);
 }
 
 // DFS - Erick

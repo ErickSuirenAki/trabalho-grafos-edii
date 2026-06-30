@@ -19,6 +19,7 @@ typedef struct {
     Vertice **listaAdj;
     Vertice *pool;
     int *graus;
+    int numVertices;
     int index_pool;
 } Grafo_lista;
 
@@ -49,18 +50,21 @@ typedef struct{
 } ResultadoBFS;
 
 typedef struct{
-    Estatisticas status;
-    double tempo_medio_BFS;
-    int pai[3][3];
-    int distancia_pares[3];
-    double memoria_utilizada;
-    bool valido;
-} EstudoCaso;
+    int *pai;
+    int *nivel;
+}ResultadoDFS;
 
 typedef struct Componente{
     int tamanho;
     int *vertices;
 } Componente;
+
+typedef struct{
+    Estatisticas status;
+    Componente *comp;
+    int numComp;
+} EstudoCaso;
+
 
 Fila *criarFila(int tamanho);
 void enfilerar(Fila *f,int vertice);
@@ -69,7 +73,12 @@ bool filaVazia(Fila *f);
 
 int gerar_numero_aletorio(int inicio);
 double calcular_execucao(clock_t inicio, clock_t fim);
-bool abrirArquivo(char caminho_arquivo[]);
+
+double BFS_100(Grafo_Matriz *grafoMat,Grafo_lista *grafoLista,int tipoLista);
+double DFS_100(Grafo_Matriz *gMatriz, Grafo_lista *gLista,int tipoGrafo);
+
+
+
 
 double calcular_memoria_lista(long V, long E);
 double calcular_memoria_matriz(int tam);
@@ -82,8 +91,7 @@ void liberar_bfs(ResultadoBFS bfs);
 int distancia_pares_lista(Grafo_lista *g,int inicio,int index_pai);
 int distancia_pares_matriz(Grafo_Matriz *g,int inicio,int index_pai);
 
-bool pai_vertices_lista(Grafo_lista *g, EstudoCaso *estudo);
-bool pai_vertices_matriz(Grafo_Matriz *g, EstudoCaso *estudo);
+int pai_vertices(int *pai,int vertice);
 
 Grafo_lista *iniciarGrafoLista(int tam, int numArestas);
 Vertice* criarVertice_lista(Grafo_lista *g,int vertice);
@@ -97,18 +105,16 @@ void insercao_aresta_matriz(Grafo_Matriz *grafo, int origem, int destino);
 
 int numero_vetores(char nome_arq[]);
 int numero_arestas(char nome_arq[]);
-double ler_inserir_lista(char nome_arq[], Grafo_lista *grafoAdj);
-double ler_inserir_matriz(char nome_arq[], Grafo_Matriz *grafoMat);
+void ler_inserir_grafo(char nome_arq[],Grafo_Matriz *grafoMat, Grafo_lista *grafoAdj, int tipoGrafo);
 
 int comparar_int(const void *a, const void *b);
 void quick_sort(int *vetor, int tam);
 double mediana(int *vetor,int tam);
 
-int grau_vertice_lista(Grafo_lista *grafo, int idx);
-Estatisticas estatisticas_lista(Grafo_lista *grafo);
+Estatisticas estatisticas_lista(Grafo_lista *g);
+Estatisticas estatisticas_matriz(Grafo_Matriz *g);
+Estatisticas calcular_estatisticas_base(int *vetor_graus, int numVertices, int numArestas);
 
-int grau_vertice_matriz(Grafo_Matriz *grafo, int idx);
-Estatisticas estatisticas_matriz(Grafo_Matriz *grafo);
 
 void DFSVisitaLista(Grafo_lista *g, int v, int *visitado, int *pai, int *nivel);
 void DFSLista(Grafo_lista *g, int verticeInicial, int *pai, int *nivel);
@@ -132,7 +138,7 @@ void escreverComponentes(const char *nomeArquivo, Componente *componentes, int n
 
 bool criar_arquivo_estudo(char nome_arq[]);
 
-void escrever_arquivo(EstudoCaso e,char nome_arq[],char tipo_grafo[]);
+void escrever_arquivo(EstudoCaso e,char nomeArquivo[],int opcao);
 
 int distanciaLista(Grafo_lista *g, int origem, int destino);
 

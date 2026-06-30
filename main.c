@@ -2,10 +2,149 @@
 #include <stdlib.h>
 #include <time.h>
 #include "grafo.h"
+#include <stdbool.h>
+
+void opcoes_menu(){
+    puts("\n--- MENU GRAFOS ---");
+    puts("1 - Gerar arquivo estudo");
+    puts("2 - Realizar 100 DFS e BFS");
+    puts("3 - Determine o pai de um vertice(DFS e BFS)");
+    puts("4 - Distancia entre dois pares");
+    puts("5 - Diametro de um grafo");
+    puts("6 - Fechar programa");
+}
+
+void gerar_estudo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char nomeArquivo[]) {
+    EstudoCaso estudo;
+    int numComp;
+
+    if (tipoGrafo == 1) {
+        estudo.status = estatisticas_lista(gLista);
+        estudo.comp = componentesConexasLista(gLista, &numComp);
+    } else {
+        estudo.status = estatisticas_matriz(gMatriz);
+        estudo.comp = componentesConexasMatriz(gMatriz, &numComp);
+    }
+    
+    estudo.numComp = numComp;
+    escrever_arquivo(estudo, nomeArquivo, tipoGrafo);
+    char *nomeTipoGrafo = (tipoGrafo == 1) ? "Lista Adjascente" : "Matriz Adjascente";
+    printf("\nArquivo de caso do %s (saida_grafo.txt) gerado: %s\n", nomeTipoGrafo,nomeArquivo);
+}
+
+bool inicioValido(int tam, int inicio){
+    if(inicio < 0 || inicio > tam -1){
+        puts("Inicio invalido,tente novamente");
+        return false;
+    } 
+    return true;
+}
+void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char nomeArquivo[]) {
+    while(1) {
+        opcoes_menu();
+        printf("\nQual opcao deseja: ");
+        int opt;
+        if (scanf("%d", &opt) != 1) break; 
+        
+        switch(opt){
+            case 1: { //1 - Gerar arquivo estudo 
+                gerar_estudo(tipoGrafo, gLista, gMatriz, nomeArquivo);
+                break;
+            }
+            case 2: { //2 - Realizar 100 DFS e BFS 
+                double tempoBFS, tempoDFS;
+                
+                tempoBFS = BFS_100(gMatriz,gLista,tipoGrafo);
+                tempoDFS = DFS_100(gMatriz,gLista,tipoGrafo);
+
+                printf("\nTempo medio execucao BFS: %.2f ms", tempoBFS);
+                printf("\nTempo medio execucao DFS: %.2f ms\n", tempoDFS);
+                break;
+            } 
+            case 3: { //3 - Determine o pai de um vertice(DFS e BFS) 
+                int tam = (tipoGrafo == 1) ? gLista->tam : gMatriz->tam;
+                int inicio =0, vertice;
+                printf("Insira o vertice de inicio do BFS/DFS(0 e %d): ",tam-1);
+                scanf("%d", &inicio);
+                if(!inicioValido(tam,inicio)){
+                    return;
+                }
+                
+                int *dfsPai = malloc(sizeof(int) * tam);
+                int *dfsNivel = malloc(sizeof(int) * tam);
+                
+                ResultadoBFS bfs;
+
+                if (tipoGrafo == 1) {
+                    bfs = BFS_lista(gLista, inicio);
+                    DFSLista(gLista, inicio, dfsPai, dfsNivel);
+                } else {
+                    bfs = BFS_matriz(gMatriz, inicio);
+                    DFSMatriz(gMatriz, inicio, dfsPai, dfsNivel);
+                }
+                
+                printf("Insira o vertice desejado para buscar o pai(0 e %d): ",tam-1);
+                scanf("%d", &vertice);
+                if(!inicioValido(tam,vertice)){
+                    return;
+                }
+                
+                int paiBFS = pai_vertices(bfs.pai, vertice);
+                int paiDFS = pai_vertices(dfsPai, vertice);
+                
+                printf("\nPai BFS do vertice %d (inicio %d): %d", vertice, inicio, paiBFS);
+                printf("\nPai DFS do vertice %d (inicio %d): %d\n", vertice, inicio, paiDFS);
+                
+                liberar_bfs(bfs);
+                free(dfsPai);
+                free(dfsNivel);
+                break;
+            }
+            case 4: { //4 - Distancia entre dois pares 
+                int inicio, idxVertice;
+                printf("Insira os dois vertices para calcular a distancia (origem destino): ");
+                scanf("%d %d", &inicio, &idxVertice);
+                
+                int tam = (tipoGrafo == 1) ? gLista->tam : gMatriz->tam;
+                int *dfsPai = malloc(sizeof(int) * tam);
+                int *dfsNivel = malloc(sizeof(int) * tam);
+                
+                int resultadoBfs;
+                
+                if (tipoGrafo == 1) {
+                    resultadoBfs = distancia_pares_lista(gLista, inicio, idxVertice);
+                    DFSLista(gLista, inicio, dfsPai, dfsNivel);
+                } else {
+                    resultadoBfs = distancia_pares_matriz(gMatriz, inicio, idxVertice);
+                    DFSMatriz(gMatriz, inicio, dfsPai, dfsNivel);
+                }
+
+                int resultadoDfs = dfsNivel[idxVertice];
+
+                printf("\nDistancia BFS de (%d,%d): %d", inicio, idxVertice, resultadoBfs);
+                printf("\nDistancia DFS de (%d,%d): %d\n", inicio, idxVertice, resultadoDfs);
+                
+                free(dfsPai);
+                free(dfsNivel);
+                break;
+            }
+            case 5: { //5 - Diametro de um grafo
+                // a complexidade do algoritmo é o(n^3), precisa implementar um aproximativo para grafos grandes
+                int diametro = (tipoGrafo == 1) ? diametroLista(gLista) : diametroMatriz(gMatriz);
+                printf("\nDiametro do grafo: %d\n", diametro);
+                break;
+            }
+            case 6:   //6 - Fechar programa
+                return;
+            default:
+                puts("\nOpcao invalida. Tente novamente.");
+        }
+    }
+}
 
 int main() {
-
     char nomeArquivo[100];
+    srand(time(NULL)); //iniciailizar numero aleatorio
     printf("Digite o nome do arquivo do grafo: ");
     scanf("%s", nomeArquivo);
 
@@ -13,179 +152,43 @@ int main() {
     int m = numero_arestas(nomeArquivo);
 
     if (n <= 0) {
-        printf("Erro ao ler o grafo.\n");
-        return 1;
-    }
-    int opcao;
-    printf("\nEscolha a representacao do grafo:\n");
-    printf("1 - Lista de adjacencia\n");
-    printf("2 - Matriz de adjacencia\n");
-    printf("Opcao: ");
-    scanf("%d", &opcao);
-
-    if (opcao != 1 && opcao != 2) {
-        printf("Opcao invalida.\n");
+        printf("Erro ao ler o grafo. Numero de vertices invalido.\n");
         return 1;
     }
 
-    int verticeInicial;
-    printf("\nDigite o vertice inicial para a DFS (0 a %d): ", n - 1);
-    scanf("%d", &verticeInicial);
-
-    if (verticeInicial < 0 || verticeInicial >= n) {
-        printf("Vertice invalido.\n");
-        return 1;
+    int tipoGrafo = 0;
+    while (tipoGrafo != 1 && tipoGrafo != 2) {
+        printf("\nEscolha a representacao do grafo:\n");
+        printf("1 - Lista de adjacencia\n");
+        printf("2 - Matriz de adjacencia\n");
+        printf("Opcao: ");
+        scanf("%d", &tipoGrafo);
+        if(tipoGrafo != 1 && tipoGrafo != 2) puts("Opcao invalida.");
     }
 
-    Grafo_lista  *gLista  = NULL;
+    Grafo_lista  *gLista  = NULL; 
     Grafo_Matriz *gMatriz = NULL;
 
-    if (opcao == 1) {
+    if (tipoGrafo == 1) {
         gLista = iniciarGrafoLista(n, m);
-        ler_inserir_lista(nomeArquivo, gLista);
-        printf("\nGrafo carregado como lista de adjacencia.\n");
+        if(gLista == NULL){
+            puts("ERRO: sem memoria para Lista");
+            return 1;
+        }
     } else {
         gMatriz = iniciarGrafoMatriz(n);
-        ler_inserir_matriz(nomeArquivo, gMatriz);
-        printf("\nGrafo carregado como matriz de adjacencia.\n");
-    }
-
-    Estatisticas stats;
-
-    if (opcao == 1) {
-        stats = estatisticas_lista(gLista);
-    } else {
-        stats = estatisticas_matriz(gMatriz);
-    }
-
-    int *pai   = malloc(n * sizeof(int));
-    int *nivel = malloc(n * sizeof(int));
-
-    clock_t inicioDFS, fimDFS;
-    double tempoDFS;
-
-    if (opcao == 1) {
-        inicioDFS = clock();
-        DFSLista(gLista, verticeInicial, pai, nivel);
-        fimDFS = clock();
-    } else {
-        inicioDFS = clock();
-        DFSMatriz(gMatriz, verticeInicial, pai, nivel);
-        fimDFS = clock();
-    }
-
-    tempoDFS = (double)(fimDFS - inicioDFS) / CLOCKS_PER_SEC;
-
-    int numComp;
-    Componente *comp = NULL;
-
-    clock_t inicioComp, fimComp;
-    double tempoComp;
-
-    if (opcao == 1) {
-        inicioComp = clock();
-        comp = componentesConexasLista(gLista, &numComp);
-        fimComp = clock();
-    } else {
-        inicioComp = clock();
-        comp = componentesConexasMatriz(gMatriz, &numComp);
-        fimComp = clock();
-    }
-
-    tempoComp = (double)(fimComp - inicioComp) / CLOCKS_PER_SEC;
-
-    int diametro;
-    clock_t inicioDiam, fimDiam;
-    double tempoDiam;
-
-    if (opcao == 1) {
-        inicioDiam = clock();
-        diametro = diametroLista(gLista);
-        fimDiam = clock();
-    } else {
-        inicioDiam = clock();
-        diametro = diametroMatriz(gMatriz);
-        fimDiam = clock();
-    }
-
-    tempoDiam = (double)(fimDiam - inicioDiam) / CLOCKS_PER_SEC;
-
-    FILE *saida = fopen("saida_grafo.txt", "w");
-    if (saida == NULL) {
-        printf("Erro ao criar arquivo de saida.\n");
-        return 1;
-    }
-
-    fprintf(saida, "================================================\n");
-    fprintf(saida, "           RESULTADOS DO GRAFO\n");
-    fprintf(saida, "================================================\n\n");
-    fprintf(saida, "Arquivo de entrada : %s\n", nomeArquivo);
-    fprintf(saida, "Representacao      : %s\n\n", opcao == 1 ? "Lista de adjacencia" : "Matriz de adjacencia");
-
-    fprintf(saida, "================================================\n");
-    fprintf(saida, "  ESTATISTICAS DO GRAFO\n");
-    fprintf(saida, "================================================\n\n");
-    fprintf(saida, "Numero de vertices : %d\n", stats.numVertices);
-    fprintf(saida, "Numero de arestas  : %d\n", stats.numArestas);
-    fprintf(saida, "Grau minimo        : %d\n", stats.grauMinimo);
-    fprintf(saida, "Grau maximo        : %d\n", stats.grauMaximo);
-    fprintf(saida, "Grau medio         : %.2f\n", stats.grauMedio);
-    fprintf(saida, "Mediana de grau    : %.2f\n\n", stats.grauMediana);
-
-    fprintf(saida, "================================================\n");
-    fprintf(saida, "  DFS (ARVORE GERADORA)\n");
-    fprintf(saida, "  Vertice inicial  : %d\n", verticeInicial);
-    fprintf(saida, "  Tempo de execucao: %.6f segundos\n", tempoDFS);
-    fprintf(saida, "================================================\n\n");
-    fprintf(saida, "Vertice | Pai | Nivel\n");
-
-    for (int i = 0; i < n; i++) {
-        if (nivel[i] == -1) {
-            // vertice nao alcancado pela DFS (esta em outra componente)
-            fprintf(saida, "%7d | %3s | %5s\n", i, "-", "-");
-        } else {
-            fprintf(saida, "%7d | %3d | %5d\n", i, pai[i], nivel[i]);
+        if(gMatriz == NULL){
+            puts("ERRO: sem memoria para matriz");
+            return 1;
         }
     }
 
-    fprintf(saida, "\n================================================\n");
-    fprintf(saida, "  COMPONENTES CONEXAS\n");
-    fprintf(saida, "  Tempo de execucao: %.6f segundos\n", tempoComp);
-    fprintf(saida, "================================================\n\n");
-    fprintf(saida, "Numero de componentes: %d\n\n", numComp);
+    ler_inserir_grafo(nomeArquivo,gMatriz,gLista,tipoGrafo);   
 
-    for (int i = 0; i < numComp; i++) {
-        fprintf(saida, "Componente %d (tamanho: %d)\n", i + 1, comp[i].tamanho);
-        fprintf(saida, "Vertices: ");
-        for (int j = 0; j < comp[i].tamanho; j++) {
-            fprintf(saida, "%d ", comp[i].vertices[j]);
-        }
-        fprintf(saida, "\n\n");
-    }
+    menu_grafo(tipoGrafo, gLista, gMatriz, nomeArquivo);
 
-    fprintf(saida, "================================================\n");
-    fprintf(saida, "  DIAMETRO DO GRAFO\n");
-    fprintf(saida, "  Tempo de execucao: %.6f segundos\n", tempoDiam);
-    fprintf(saida, "================================================\n\n");
-    fprintf(saida, "Diametro: %d\n\n", diametro);
-
-    fclose(saida);
-
-    free(pai);
-    free(nivel);
-
-    for (int i = 0; i < numComp; i++) {
-        free(comp[i].vertices);
-    }
-    free(comp);
-
-    if (opcao == 1) {
-        liberar_lista(gLista);
-    } else {
-        liberar_matriz(gMatriz, n);
-    }
-
-    printf("\nPronto! Resultados salvos em: saida_grafo.txt\n");
-
+    liberar_lista(gLista);
+    liberar_matriz(gMatriz, n);
+   
     return 0;
 }
