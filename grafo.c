@@ -396,9 +396,12 @@ void ler_inserir_grafo(char nome_arq[],Grafo_Matriz *grafoMat, Grafo_lista *graf
     clock_t inicio,fim;
 
     fscanf(file,"%d",&lixo);
-
+    int tam = (tipoGrafo == 1) ? grafoAdj->tam : grafoMat->tam; 
     while(fscanf(file,"%d %d",&origem,&destino) == 2){
-        // 1 == listaAdjascente  // 0 == matrizAdjascente
+        origem--; destino--; //para inserir dentro dos limites do vetor
+        if(origem == -1 || destino == -1)printf("nao é possivel");
+        if(origem >= tam|| destino >= tam) printf("fora do limite: %d %d tam: %d\n",origem,destino,tam);
+        // 1 == listaAdjascente  // 2 == matrizAdjascente
         if(tipoGrafo == 1){  
             insercao_aresta_lista(grafoAdj, origem, destino);
         } else {
@@ -613,7 +616,8 @@ int compararComponentes(const void *a, const void *b){
 void DFS_ComponenteLista(Grafo_lista *g, int v, int *visitado,int *listaVertices, int *tamanho){
 
     visitado[v] = 1;
-    listaVertices[(*tamanho)++] = v;
+    listaVertices[(*tamanho)] = v;
+    (*tamanho)++;
 
     Vertice *atual = g->listaAdj[v];
 
@@ -640,12 +644,10 @@ Componente *componentesConexasLista(Grafo_lista *g, int *numComponentes){
     int contador = 0;
 
     for(int i = 0; i < n; i++){
-
         if(!visitado[i]){
-
             int *listaTemp = malloc(n * sizeof(int));
             int tamanho = 0;
-
+            /// DFS sem recursao 
             DFS_ComponenteLista(g, i, visitado, listaTemp, &tamanho);
 
             int *listaFinal = malloc(tamanho * sizeof(int));
@@ -683,8 +685,8 @@ Componente *componentesConexasLista(Grafo_lista *g, int *numComponentes){
 void DFS_ComponenteMatriz(Grafo_Matriz *g, int v, int *visitado,int *listaVertices, int *tamanho){
 
     visitado[v] = 1;
-    listaVertices[(*tamanho)++] = v;
-
+    listaVertices[(*tamanho)] = v;
+    (*tamanho)++;
     for(int u = 0; u < g->tam; u++){
 
         if(g->matriz[v][u] && !visitado[u]){

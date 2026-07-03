@@ -19,21 +19,29 @@ void gerar_estudo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, cha
     int numComp;
 
     if (tipoGrafo == 1) {
+        puts("gerando estatisticas...");
         estudo.status = estatisticas_lista(gLista);
+        puts("gerando componentesLista");
         estudo.comp = componentesConexasLista(gLista, &numComp);
     } else {
+        puts("gerando estatisticas...");
         estudo.status = estatisticas_matriz(gMatriz);
+        puts("gerando componentesLista");
         estudo.comp = componentesConexasMatriz(gMatriz, &numComp);
     }
     
     estudo.numComp = numComp;
+    puts("escrevendo o arquivo...");
     escrever_arquivo(estudo, nomeArquivo, tipoGrafo);
-    char *nomeTipoGrafo = (tipoGrafo == 1) ? "Lista Adjascente" : "Matriz Adjascente";
+    char *nomeTipoGrafo = (tipoGrafo == 1) ? "Lista Adjacente" : "Matriz Adjacente";
     printf("\nArquivo de caso do %s (saida_grafo.txt) gerado: %s\n", nomeTipoGrafo,nomeArquivo);
+    
+    free(estudo.comp->vertices);
+    free(estudo.comp);
 }
 
 bool inicioValido(int tam, int inicio){
-    if(inicio < 0 || inicio > tam -1){
+    if(inicio < 0 || inicio > tam){
         puts("Inicio invalido,tente novamente");
         return false;
     } 
@@ -64,8 +72,9 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
             case 3: { //3 - Determine o pai de um vertice(DFS e BFS) 
                 int tam = (tipoGrafo == 1) ? gLista->tam : gMatriz->tam;
                 int inicio =0, vertice;
-                printf("Insira o vertice de inicio do BFS/DFS(0 e %d): ",tam-1);
+                printf("Insira o vertice de inicio do BFS/DFS(1 e %d): ",tam);
                 scanf("%d", &inicio);
+                inicio--; //valor dentro do vetor
                 if(!inicioValido(tam,inicio)){
                     return;
                 }
@@ -83,8 +92,9 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
                     DFSMatriz(gMatriz, inicio, dfsPai, dfsNivel);
                 }
                 
-                printf("Insira o vertice desejado para buscar o pai(0 e %d): ",tam-1);
+                printf("Insira o vertice desejado para buscar o pai(1 e %d): ",tam);
                 scanf("%d", &vertice);
+                vertice--; //valor dentro do vetor
                 if(!inicioValido(tam,vertice)){
                     return;
                 }
@@ -92,8 +102,8 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
                 int paiBFS = pai_vertices(bfs.pai, vertice);
                 int paiDFS = pai_vertices(dfsPai, vertice);
                 
-                printf("\nPai BFS do vertice %d (inicio %d): %d", vertice, inicio, paiBFS);
-                printf("\nPai DFS do vertice %d (inicio %d): %d\n", vertice, inicio, paiDFS);
+                printf("\nPai BFS do vertice %d (inicio %d): %d", vertice+1, inicio+1, paiBFS);
+                printf("\nPai DFS do vertice %d (inicio %d): %d\n", vertice+1, inicio+1, paiDFS);
                 
                 liberar_bfs(bfs);
                 free(dfsPai);
@@ -102,10 +112,11 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
             }
             case 4: { //4 - Distancia entre dois pares 
                 int inicio, idxVertice;
-                printf("Insira os dois vertices para calcular a distancia (origem destino): ");
-                scanf("%d %d", &inicio, &idxVertice);
-                
                 int tam = (tipoGrafo == 1) ? gLista->tam : gMatriz->tam;
+                printf("Insira os dois vertices para calcular a distancia (1 %d): ",tam);
+                scanf("%d %d", &inicio, &idxVertice);
+                inicio--; idxVertice--; //valor dentro do vetor
+                
                 int *dfsPai = malloc(sizeof(int) * tam);
                 int *dfsNivel = malloc(sizeof(int) * tam);
                 
@@ -121,8 +132,8 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
 
                 int resultadoDfs = dfsNivel[idxVertice];
 
-                printf("\nDistancia BFS de (%d,%d): %d", inicio, idxVertice, resultadoBfs);
-                printf("\nDistancia DFS de (%d,%d): %d\n", inicio, idxVertice, resultadoDfs);
+                printf("\nDistancia BFS de (%d,%d): %d", inicio+1, idxVertice+1, resultadoBfs);
+                printf("\nDistancia DFS de (%d,%d): %d\n", inicio+1, idxVertice+1, resultadoDfs);
                 
                 free(dfsPai);
                 free(dfsNivel);
@@ -147,7 +158,7 @@ int main() {
     srand(time(NULL)); //iniciailizar numero aleatorio
     printf("Digite o nome do arquivo do grafo: ");
     scanf("%s", nomeArquivo);
-
+    printf("Lendo arquivo: %s...\n",nomeArquivo);
     int n = numero_vetores(nomeArquivo);
     int m = numero_arestas(nomeArquivo);
 
@@ -168,7 +179,8 @@ int main() {
 
     Grafo_lista  *gLista  = NULL; 
     Grafo_Matriz *gMatriz = NULL;
-
+    char *tipog = (tipoGrafo == 1) ? "Lista adjacente" : "Matriz adjacente";
+    printf("\nIniciando o %s..",tipog);
     if (tipoGrafo == 1) {
         gLista = iniciarGrafoLista(n, m);
         if(gLista == NULL){
@@ -182,7 +194,7 @@ int main() {
             return 1;
         }
     }
-
+    puts("\nInserindo as arestas...");
     ler_inserir_grafo(nomeArquivo,gMatriz,gLista,tipoGrafo);   
 
     menu_grafo(tipoGrafo, gLista, gMatriz, nomeArquivo);
