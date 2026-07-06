@@ -491,7 +491,7 @@ Estatisticas calcular_estatisticas_base(int *vetor_graus, int numVertices, int n
     }
 
     for(int i = 0; i < numVertices ; i++){
-        int grau = vetor_graus[i + 1]; 
+        int grau = vetor_graus[i]; 
         copia_graus[i] = grau;
         somaGrau += grau;
         

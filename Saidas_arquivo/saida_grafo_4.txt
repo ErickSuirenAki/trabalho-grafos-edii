@@ -11,7 +11,7 @@ Representacao      : Lista de adjacencia
 
 Numero de vertices : 375000
 Numero de arestas  : 8187427
-Grau minimo        : 0
+Grau minimo        : 9
 Grau maximo        : 89
 Grau medio         : 43.67
 Mediana de grau    : 47.00
