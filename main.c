@@ -79,35 +79,44 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
                     return;
                 }
                 
-                int *dfsPai = malloc(sizeof(int) * tam);
-                int *dfsNivel = malloc(sizeof(int) * tam);
+                int *dfsVisitado = malloc(sizeof(int) * tam);
+                int *dfslistVertice = malloc(sizeof(int) * tam);
+                int tamdfs = 0;
                 
                 ResultadoBFS bfs;
 
                 if (tipoGrafo == 1) {
                     bfs = BFS_lista(gLista, inicio);
-                    DFSLista(gLista, inicio, dfsPai, dfsNivel);
+                    DFSLista(gLista, inicio, dfsVisitado, dfslistVertice,&tamdfs);
                 } else {
                     bfs = BFS_matriz(gMatriz, inicio);
-                    DFSMatriz(gMatriz, inicio, dfsPai, dfsNivel);
+                    DFSMatriz(gMatriz, inicio, dfsVisitado, dfslistVertice,&tamdfs);
+                }
+                printf("\nquantos pais deseja buscar?: ");
+                int rep;
+                scanf("%d",&rep);
+
+                while(rep > 0){
+                    printf("Insira o vertice desejado para buscar o pai(1 e %d): ",tam);
+                    scanf("%d", &vertice);
+                    vertice--; //valor dentro do vetor
+                    if(!inicioValido(tam,vertice)){
+                        return;
+                    }
+                    
+                    int paiBFS = pai_vertices(bfs.pai, vertice);
+                    int paiDFS = pai_vertices(dfslistVertice, vertice);
+                    
+                    printf("\nPai BFS do vertice %d (inicio %d): %d", vertice+1, inicio+1, paiBFS);
+                    printf("\nPai DFS do vertice %d (inicio %d): %d\n", vertice+1, inicio+1, paiDFS);
+                    rep--;
                 }
                 
-                printf("Insira o vertice desejado para buscar o pai(1 e %d): ",tam);
-                scanf("%d", &vertice);
-                vertice--; //valor dentro do vetor
-                if(!inicioValido(tam,vertice)){
-                    return;
-                }
-                
-                int paiBFS = pai_vertices(bfs.pai, vertice);
-                int paiDFS = pai_vertices(dfsPai, vertice);
-                
-                printf("\nPai BFS do vertice %d (inicio %d): %d", vertice+1, inicio+1, paiBFS);
-                printf("\nPai DFS do vertice %d (inicio %d): %d\n", vertice+1, inicio+1, paiDFS);
+               
                 
                 liberar_bfs(bfs);
-                free(dfsPai);
-                free(dfsNivel);
+                free(dfsVisitado);
+                free(dfslistVertice);
                 break;
             }
             case 4: { //4 - Distancia entre dois pares 
@@ -117,32 +126,34 @@ void menu_grafo(int tipoGrafo, Grafo_lista *gLista, Grafo_Matriz *gMatriz, char 
                 scanf("%d %d", &inicio, &idxVertice);
                 inicio--; idxVertice--; //valor dentro do vetor
                 
-                int *dfsPai = malloc(sizeof(int) * tam);
-                int *dfsNivel = malloc(sizeof(int) * tam);
-                
-                int resultadoBfs;
+                int *dfsVisitado = malloc(sizeof(int) * tam);
+                int *dfsListVertice = malloc(sizeof(int) * tam);
+                int dfstam = 0;
+
+                int paiBfs;
                 
                 if (tipoGrafo == 1) {
-                    resultadoBfs = distancia_pares_lista(gLista, inicio, idxVertice);
-                    DFSLista(gLista, inicio, dfsPai, dfsNivel);
+                    paiBfs = distancia_pares_lista(gLista, inicio, idxVertice);
+                    DFSLista(gLista, inicio, dfsVisitado, dfsListVertice,&dfstam);
                 } else {
-                    resultadoBfs = distancia_pares_matriz(gMatriz, inicio, idxVertice);
-                    DFSMatriz(gMatriz, inicio, dfsPai, dfsNivel);
+                    paiBfs = distancia_pares_matriz(gMatriz, inicio, idxVertice);
+                    DFSMatriz(gMatriz, inicio, dfsVisitado, dfsListVertice,&dfstam);
                 }
 
-                int resultadoDfs = dfsNivel[idxVertice];
+                int paiDfs = dfsListVertice[idxVertice];
 
-                printf("\nDistancia BFS de (%d,%d): %d", inicio+1, idxVertice+1, resultadoBfs);
-                printf("\nDistancia DFS de (%d,%d): %d\n", inicio+1, idxVertice+1, resultadoDfs);
+                printf("\nDistancia BFS de (%d,%d): %d", inicio+1, idxVertice+1, paiBfs);
+                printf("\nDistancia DFS de (%d,%d): %d\n", inicio+1, idxVertice+1, paiDfs);
                 
-                free(dfsPai);
-                free(dfsNivel);
+                free(dfsVisitado);
+                free(dfsListVertice);
                 break;
             }
             case 5: { //5 - Diametro de um grafo
                 // a complexidade do algoritmo é o(n^3), precisa implementar um aproximativo para grafos grandes
-                int diametro = (tipoGrafo == 1) ? diametroLista(gLista) : diametroMatriz(gMatriz);
-                printf("\nDiametro do grafo: %d\n", diametro);
+                int u, v;
+                int diametro = diametroAproximado(gLista,gMatriz,&u,&v);
+                printf("\nDiametro do grafo entre o vertice(%d,%d): %d\n",u,v, diametro);
                 break;
             }
             case 6:   //6 - Fechar programa

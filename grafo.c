@@ -5,7 +5,7 @@
 #include <string.h>
 #include<time.h>
 
-//fila Implementacao
+//Implementacao fila
 Fila *criarFila(int tamanho){
     Fila *f = malloc(sizeof(Fila));
     f->dados = malloc(sizeof(int) * tamanho);
@@ -32,6 +32,38 @@ bool filaVazia(Fila *f){
     return f->inicio == f->fim;
 }
 
+//Implementacao Pilha
+Pilha *criarPilha(int tamanho) {
+    Pilha *p = malloc(sizeof(Pilha));
+    if (p == NULL) return NULL;
+
+    p->dados = malloc(tamanho * sizeof(int));
+    if (p->dados == NULL){
+        free(p); 
+        return NULL; 
+    }
+
+    p->topo = 0;
+    p->tamanho = tamanho;
+    return p;
+}
+int pilhaVazia(Pilha *p) {
+    return p->topo == 0;
+}
+void empilhar(Pilha *p, int v) {
+    p->dados[p->topo++] = v;
+}
+int desempilhar(Pilha *p) {
+    return p->dados[--p->topo];
+}
+void liberarPilha(Pilha *p) {
+    if (p != NULL) {
+        free(p->dados);
+        free(p);
+    }
+}
+
+
 //metodos auxiliares gerais
 int gerar_numero_aletorio(int limite){
     return rand() % limite;
@@ -39,6 +71,7 @@ int gerar_numero_aletorio(int limite){
 double calcular_execucao(clock_t inicio, clock_t fim){
     return (double)(1000.0 * (fim - inicio) / CLOCKS_PER_SEC); //tempo execucao ms
 }
+//teste de execucao
 double BFS_100(Grafo_Matriz *grafoMat,Grafo_lista *grafoLista,int tipoGrafo){
     int inicio;
     int tam = (tipoGrafo == 1) ? grafoLista->tam : grafoMat->tam;
@@ -61,33 +94,44 @@ double BFS_100(Grafo_Matriz *grafoMat,Grafo_lista *grafoLista,int tipoGrafo){
     double resultado = (double) soma_tempo / 100.0; //media de tempo em milisegundos
     return resultado;
 }
-double DFS_100(Grafo_Matriz *gMatriz, Grafo_lista *gLista,int tipoGrafo){
-    clock_t inicio,fim;
-    int verticeInicial;
+double DFS_100(Grafo_Matriz *gMatriz, Grafo_lista *gLista, int tipoGrafo){
+    clock_t inicio, fim;
     int tam = (tipoGrafo == 1) ? gLista->tam : gMatriz->tam;
 
     double tempo_execucao = 0;
-    for(int cont = 0; cont < 100 ; cont++){
-        int *pai = malloc(sizeof(int) * tam);
-        int *nivel = malloc(sizeof(int) * tam);
-        
-        verticeInicial = gerar_numero_aletorio(tam);
+
+    int *visitado = malloc(sizeof(int) * tam);
+    int *listaVertices = malloc(sizeof(int) * tam);
+
+    if (visitado == NULL || listaVertices == NULL) {
+        free(visitado);
+        free(listaVertices);
+        return -1; /* falha de alocacao */
+    }
+
+    for (int cont = 0; cont < 100; cont++) {
+        int tamDFS = 0;
+        int verticeInicial = gerar_numero_aletorio(tam);
+
+        memset(visitado, 0, sizeof(int) * tam); /* reset a cada rodada */
+
         inicio = clock();
-        if(tipoGrafo == 1){
-            DFSLista(gLista,verticeInicial,pai,nivel);
-        }else{
-            DFSMatriz(gMatriz,verticeInicial,pai,nivel);
+        if (tipoGrafo == 1) {
+            DFSLista(gLista, verticeInicial, visitado, listaVertices, &tamDFS);
+        } else {
+            DFSMatriz(gMatriz, verticeInicial, visitado, listaVertices, &tamDFS);
         }
         fim = clock();
-        
-        free(pai); free(nivel);
-        tempo_execucao += calcular_execucao(inicio,fim);
+
+        tempo_execucao += calcular_execucao(inicio, fim);
     }
-    double resultado = (double) tempo_execucao / 100.0; //media de tempo em milisegundos
+
+    free(visitado);
+    free(listaVertices);
+
+    double resultado = tempo_execucao / 100.0; /* media de tempo em milissegundos */
     return resultado;
 }
-
-//calcular memoria utilizada
 double calcular_memoria_lista(long V, long E){
     long long arestas_armazenadas = 2LL * E;
     long long bytes = 
@@ -110,7 +154,26 @@ double calcular_memoria_matriz(int tam){
     return mb;
 }
 
-//BFS
+//Estudo caso
+int distancia_pares_lista(Grafo_lista *g,int inicio,int index_pai){
+    ResultadoBFS bfs = BFS_lista(g,inicio);
+
+    int distancia = bfs.nivel[index_pai];
+    liberar_bfs(bfs);
+    return distancia;
+}
+int distancia_pares_matriz(Grafo_Matriz *g,int inicio,int index_pai){
+    ResultadoBFS bfs = BFS_matriz(g,inicio);
+
+    int distancia = bfs.nivel[index_pai];
+    liberar_bfs(bfs);
+    return distancia;
+}
+int pai_vertices(int *pai,int vertice){
+    return pai[vertice];
+}
+
+//Implementacao BFS
 ResultadoBFS iniciar_resultado_BFS(int tam){
     ResultadoBFS bfs;
     bfs.valido = true;
@@ -233,26 +296,8 @@ void liberar_bfs(ResultadoBFS bfs){
     if(bfs.nivel   != NULL) free(bfs.nivel);
     if(bfs.pai     != NULL) free(bfs.pai);
 }
-//operacoes que usam BFS
-int distancia_pares_lista(Grafo_lista *g,int inicio,int index_pai){
-    ResultadoBFS bfs = BFS_lista(g,inicio);
 
-    int distancia = bfs.nivel[index_pai];
-    liberar_bfs(bfs);
-    return distancia;
-}
-int distancia_pares_matriz(Grafo_Matriz *g,int inicio,int index_pai){
-    ResultadoBFS bfs = BFS_matriz(g,inicio);
-
-    int distancia = bfs.nivel[index_pai];
-    liberar_bfs(bfs);
-    return distancia;
-}
-int pai_vertices(int *pai,int vertice){
-    return pai[vertice];
-}
-
-//lista Implementacao
+//Implementacao Lista
 Grafo_lista *iniciarGrafoLista(int tam, int numArestas){
     Grafo_lista *grafo = malloc(sizeof(Grafo_lista));
     if(grafo == NULL) return NULL;
@@ -308,7 +353,7 @@ void imprimir_grafo_lista(Grafo_lista *grafo){
     }
 }
 
-//matriz Implementacao
+//Implementacao Matriz
 Grafo_Matriz *iniciarGrafoMatriz(int tam){
     if(tam > 50000) return NULL; // limite de ram, acima disso apenas 16gb pra cima
     
@@ -470,7 +515,7 @@ Estatisticas calcular_estatisticas_base(int *vetor_graus, int numVertices, int n
     return est;
 }
 
-//arquivo estudo de casos
+//Implementacao escrita arquivo saida
 void escrever_arquivo(EstudoCaso e,char nomeArquivo[],int opcao){
     FILE *saida = fopen("saida_grafo.txt", "w");
     if (saida == NULL) {
@@ -510,81 +555,55 @@ void escrever_arquivo(EstudoCaso e,char nomeArquivo[],int opcao){
 }
 
 // DFS - Erick
-
-void DFSVisitaLista(Grafo_lista *g, int v, int *visitado, int *pai, int *nivel){
-    visitado[v] = 1;
-
-    Vertice *atual = g->listaAdj[v];
-
-    while(atual != NULL){
-        int u = atual->id;
-
-        if(!visitado[u]){
-            pai[u] = v;
-            nivel[u] = nivel[v] + 1;
-            DFSVisitaLista(g,u,visitado,pai,nivel);
-        }
-
-        atual = atual->prox;
-    }
-}
-
-void DFSLista(Grafo_lista *g, int verticeInicial, int *pai, int *nivel){
-
-    int n = g->tam;
-
-    int *visitado = calloc(n,sizeof(int));
-
-    for(int i=0;i<n;i++){
-        pai[i] = -1;
-        nivel[i] = -1;
-    }
-
-    pai[verticeInicial] = -1;
-    nivel[verticeInicial] = 0;
-
-    DFSVisitaLista(g,verticeInicial,visitado,pai,nivel);
-
-    free(visitado);
-}
-
-
-// DFS Matriz - Erick
-void DFSVisitaMatriz(Grafo_Matriz *g, int v, int *visitado, int *pai, int *nivel){
+void DFSLista(Grafo_lista *g, int v, int *visitado, int *listaVertices, int *tamanho) {
+    Pilha *pilha = criarPilha(g->tam);
+    if (pilha == NULL) return; /* falha de alocacao */
 
     visitado[v] = 1;
+    empilhar(pilha, v);
 
-    for(int u = 0; u < g->tam; u++){
+    while (!pilhaVazia(pilha)) {
+        int atual = desempilhar(pilha);
 
-        if(g->matriz[v][u] && !visitado[u]){
+        listaVertices[(*tamanho)] = atual;
+        (*tamanho)++;
 
-            pai[u] = v;
-            nivel[u] = nivel[v] + 1;
-
-            DFSVisitaMatriz(g, u, visitado, pai, nivel);
+        Vertice *vizinho = g->listaAdj[atual];
+        while (vizinho != NULL) {
+            int u = vizinho->id;
+            if (!visitado[u]) {
+                visitado[u] = 1;
+                empilhar(pilha, u);
+            }
+            vizinho = vizinho->prox;
         }
     }
+
+    liberarPilha(pilha);
 }
+void DFSMatriz(Grafo_Matriz *g, int v, int *visitado, int *listaVertices, int *tamanho) {
+    Pilha *pilha = criarPilha(g->tam);
+    if (pilha == NULL) return;
 
-void DFSMatriz(Grafo_Matriz *g, int verticeInicial, int *pai, int *nivel){
+    visitado[v] = 1;
+    empilhar(pilha, v);
 
-    int n = g->tam;
+    while (!pilhaVazia(pilha)) {
+        int atual = desempilhar(pilha);
 
-    int *visitado = calloc(n, sizeof(int));
+        listaVertices[(*tamanho)] = atual;
+        (*tamanho)++;
 
-    for(int i = 0; i < n; i++){
-        pai[i] = -1;
-        nivel[i] = -1;
+        for (int u = 0; u < g->tam; u++) {
+            if (g->matriz[atual][u] && !visitado[u]) {
+                visitado[u] = 1;
+                empilhar(pilha, u);
+            }
+        }
     }
 
-    pai[verticeInicial] = -1;
-    nivel[verticeInicial] = 0;
-
-    DFSVisitaMatriz(g, verticeInicial, visitado, pai, nivel);
-
-    free(visitado);
+    liberarPilha(pilha);
 }
-
 void imprimirArvoreDFS(int *pai, int *nivel, int numVertices, const char *nomeArquivo){
 
     FILE *arquivo = fopen(nomeArquivo, "w");
@@ -603,16 +622,13 @@ void imprimirArvoreDFS(int *pai, int *nivel, int numVertices, const char *nomeAr
     fclose(arquivo);
 }
 
-
-// Componentes Conexas - Erick
-
+//Implementacao Compontentes - Erick
 int compararComponentes(const void *a, const void *b){
     Componente *compA = (Componente *)a;
     Componente *compB = (Componente *)b;
 
     return compB->tamanho - compA->tamanho;
 }
-
 void DFS_ComponenteLista(Grafo_lista *g, int v, int *visitado,int *listaVertices, int *tamanho){
 
     visitado[v] = 1;
@@ -626,13 +642,12 @@ void DFS_ComponenteLista(Grafo_lista *g, int v, int *visitado,int *listaVertices
         int u = atual->id;
 
         if(!visitado[u]){
-            DFS_ComponenteLista(g, u, visitado, listaVertices, tamanho);
+            DFSLista(g, u, visitado, listaVertices, tamanho);
         }
 
         atual = atual->prox;
     }
 }
-
 Componente *componentesConexasLista(Grafo_lista *g, int *numComponentes){
 
     int n = g->tam;
@@ -647,8 +662,8 @@ Componente *componentesConexasLista(Grafo_lista *g, int *numComponentes){
         if(!visitado[i]){
             int *listaTemp = malloc(n * sizeof(int));
             int tamanho = 0;
-            /// DFS sem recursao 
-            DFS_ComponenteLista(g, i, visitado, listaTemp, &tamanho);
+ 
+            DFSLista(g, i, visitado, listaTemp, &tamanho);
 
             int *listaFinal = malloc(tamanho * sizeof(int));
 
@@ -681,7 +696,6 @@ Componente *componentesConexasLista(Grafo_lista *g, int *numComponentes){
 
     return componentes;
 }
-
 void DFS_ComponenteMatriz(Grafo_Matriz *g, int v, int *visitado,int *listaVertices, int *tamanho){
 
     visitado[v] = 1;
@@ -691,11 +705,10 @@ void DFS_ComponenteMatriz(Grafo_Matriz *g, int v, int *visitado,int *listaVertic
 
         if(g->matriz[v][u] && !visitado[u]){
 
-            DFS_ComponenteMatriz(g,u,visitado, listaVertices,tamanho);
+            DFSMatriz(g,u,visitado, listaVertices,tamanho);
         }
     }
 }
-
 Componente *componentesConexasMatriz(Grafo_Matriz *g, int *numComponentes){
     int n = g->tam;
     int *visitado = calloc(n, sizeof(int));
@@ -711,7 +724,7 @@ Componente *componentesConexasMatriz(Grafo_Matriz *g, int *numComponentes){
 
             int tamanho = 0;
 
-            DFS_ComponenteMatriz(g,i,visitado, listaTemp, &tamanho);
+            DFSMatriz(g,i,visitado, listaTemp, &tamanho);
             int *listaFinal = malloc(tamanho * sizeof(int));
             for(int j = 0; j < tamanho; j++){
                 listaFinal[j] = listaTemp[j];
@@ -738,7 +751,6 @@ Componente *componentesConexasMatriz(Grafo_Matriz *g, int *numComponentes){
 
     return componentes;
 }
-
 void escreverComponentes(const char *nomeArquivo,Componente *componentes,int numComponentes){
 
     FILE *arquivo = fopen(nomeArquivo, "w");
@@ -777,7 +789,6 @@ int distanciaLista(Grafo_lista *g, int origem, int destino){
 
     return distancia;
 }
-
 int distanciaMatriz(Grafo_Matriz *g, int origem, int destino){
     ResultadoBFS bfs = BFS_matriz(g, origem);
 
@@ -788,6 +799,7 @@ int distanciaMatriz(Grafo_Matriz *g, int origem, int destino){
     return distancia;
 }
 
+//Implementacao Diametro Grafo
 int diametroLista(Grafo_lista *g){
 
     int diametro = 0;
@@ -811,7 +823,6 @@ int diametroLista(Grafo_lista *g){
 
     return diametro;
 }
-
 int diametroMatriz(Grafo_Matriz *g){
 
     int diametro = 0;
@@ -832,6 +843,27 @@ int diametroMatriz(Grafo_Matriz *g){
 
         liberar_bfs(bfs);
     }
+
+    return diametro;
+}
+int diametroAproximado(Grafo_lista *lista, Grafo_Matriz *matriz, int *pU, int *pV) {
+    int origem = 0;
+    ResultadoBFS bfs1, bfs2;
+
+    /* 1a busca: a partir de 'origem', acha o vertice mais distante (u) */
+    bfs1 = (lista != NULL) ? BFS_lista(lista, origem) : BFS_matriz(matriz, origem);
+
+    int u = bfs1.caminho[bfs1.tamanho - 1];   /* vertice mais distante de origem */
+    bfs2 = (lista != NULL) ? BFS_lista(lista, u) : BFS_matriz(matriz, u);
+
+    int v = bfs2.caminho[bfs2.tamanho - 1];   /* vertice mais distante de u */
+    int diametro = bfs2.nivel[v];
+
+    if (pU) *pU = u;
+    if (pV) *pV = v;
+
+    liberar_bfs(bfs1);
+    liberar_bfs(bfs2);
 
     return diametro;
 }
