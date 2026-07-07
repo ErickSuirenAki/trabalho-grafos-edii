@@ -867,3 +867,31 @@ int diametroAproximado(Grafo_lista *lista, Grafo_Matriz *matriz, int *pU, int *p
 
     return diametro;
 }
+
+void DFSVisitaLista(Grafo_lista *g, int v, int *visitado, int *pai, int *nivel) {
+    visitado[v] = 1;
+
+    Vertice *atual = g->listaAdj[v];
+    while (atual != NULL) {
+        int u = atual->id;
+        if (!visitado[u]) {
+            pai[u] = v;
+            nivel[u] = nivel[v] + 1;
+            DFSVisitaLista(g, u, visitado, pai, nivel);
+        }
+        atual = atual->prox;
+    }
+}
+void DFS_PaiNivel(Grafo_lista *g, int verticeInicial, int *pai, int *nivel) {
+    int n = g->tam;
+    int *visitado = calloc(n, sizeof(int));
+
+    for (int i = 0; i < n; i++) {
+        pai[i] = -1;
+        nivel[i] = -1;
+    }
+    nivel[verticeInicial] = 0;
+
+    DFSVisitaLista(g, verticeInicial, visitado, pai, nivel);
+    free(visitado);
+}
